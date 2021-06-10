@@ -6,192 +6,178 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://casa.nrao.edu/schema/casa.xsd
 file:///opt/casa/code/xmlcasa/xml/casa.xsd">
 
-<task type="function" name="polsimulate" category="analysis">
+  <task type="function" name="polsimulate" category="analysis">
+    <shortdescription>Basic simulator of ALMA/J-VLA full-polarization observations. The output should be imaged with CLEAN (with stokes=IQUV) and the polarization vectors should be computed with immath (with options poli and pola). See the ALMA Polarization CASA Guide for more information.</shortdescription>
+    <description>Basic simulator of ALMA/J-VLA full-polarization observations. The output should be imaged with CLEAN (with stokes=IQUV) and the polarization vectors should be computed with immath (with options poli and pola). See the ALMA Polarization CASA Guide for more information.</description>
 
-  <shortdescription>Basic simulator of ALMA/J-VLA full-polarization observations. The output should be imaged with CLEAN (with stokes=IQUV) and the polarization vectors should be computed with immath (with options poli and pola). See the ALMA Polarization CASA Guide for more information.</shortdescription>
-      
-  <description>Basic simulator of ALMA/J-VLA full-polarization observations. The output should be imaged with CLEAN (with stokes=IQUV) and the polarization vectors should be computed with immath (with options poli and pola). See the ALMA Polarization CASA Guide for more information.</description>
+    <input>
+      <param type="string" name="vis" mustexist="false">
+	<description>Name of output measurement set.</description>
+	<value>polsimulate_output.ms</value>
+      </param>
 
+      <param type="string" name="array_configuration" mustexist="false">
+	<description>Array configuration to use (see the files in data/alma/simmos of your CASA path). Default is an ALMA configuration</description>
+	<value>alma.out04.cfg</value>
+      </param>
 
-<input>
+      <param type="string" name="feed" mustexist="false">
+	<description>Polarization basis for the measurement set. Can be linear (e.g., for ALMA) or circular (e.g., for VLA). Default is linear.</description>
+	<value>linear</value>
+      </param>
 
-    <param type="string" name="vis" mustexist="false">
-      <description>Name of output measurement set.</description>
-      <value>polsimulate_output.ms</value>
-    </param>
+      <param type="any" name="LO" mustexist="false">
+	<description>Frequency of the first LO in Hz (this will define the ALMA band of observation). Default is 100 GHz (i.e., ALMA Band 3)</description>
+	<value>100.e9</value>
+      </param>
 
-    <param type="string" name="array_configuration" mustexist="false">
-      <description>Array configuration to use (see the files in data/alma/simmos of your CASA path). Default is an ALMA configuration</description>
-      <value>alma.out04.cfg</value>
-    </param>
+      <param type="any" name="BBs" mustexist="false">
+	<description>List with the baseband frequency offsets (in Hz). There will be one spectral window per baseband. </description>
+	<value>[-7.e9, -5.e9, 5.e9, 7.e9]</value>
+      </param>
 
-    <param type="string" name="feed" mustexist="false">
-      <description>Polarization basis for the measurement set. Can be linear (e.g., for ALMA) or circular (e.g., for VLA). Default is linear.</description>
-      <value>linear</value>
-    </param>
+      <param type="any" name="spw_width" mustexist="false">
+	<description>Width of the spectral windows in Hz (the spws will be centered at each BB).</description>
+	<value>2.e9</value>
+      </param>
 
+      <param type="int" name="nchan" mustexist="false">
+	<description>Number of channels in each spw (all spws will have the same number of channels).</description>
+	<value>8</value>
+      </param>
 
-    <param type="any" name="LO" mustexist="false">
-      <description>Frequency of the first LO in Hz (this will define the ALMA band of observation). Default is 100 GHz (i.e., ALMA Band 3)</description>
-      <value>100.e9</value>
-    </param>
+      <param type="any" name="model_image" mustexist="false">
+	<description>List of four images (Stokes I, Q, U, and V, respectively) to be used as observed extended sources. Image cubes are allowed. Default is to NOT simulate extended sources. BEWARE OF THE CURRENT ALMA LIMITATION for extended sources (should fall within the inner 1/3 of the primary beam FWHM).</description>
+	<value>[]</value>
+      </param>
 
+      <param type="any" name="I" mustexist="false">
+	<description>List of Stokes I (in Jy) for a set of point sources to simulate. All these sources will be located at the field center (currently, only point sources at the field center can be simulated; source offsets will be implemented in the future). Default is NO source. The flux density is referred to the LO frequency. Example: [1.0] for a 1Jy source.</description>
+	<value>[]</value>
+      </param>
 
-    <param type="any" name="BBs" mustexist="false">
-      <description>List with the baseband frequency offsets (in Hz). There will be one spectral window per baseband. </description>
-      <value>[-7.e9, -5.e9, 5.e9, 7.e9]</value>
-    </param>
+      <param type="any" name="Q" mustexist="false">
+	<description>List of Stokes Q (in Jy) for the sources defined above. Default is no source. Example: [0.0] for no Q signal. These values are referred to the LO frequency.</description>
+	<value>[]</value>
+      </param>
 
+      <param type="any" name="U" mustexist="false">
+	<description>>List of Stokes U (in Jy) for the sources defined above. Default is no source. Example: [0.0] for no U signal. These values are referred to the LO frequency.</description>
+	<value>[]</value>
+      </param>
 
-    <param type="any" name="spw_width" mustexist="false">
-      <description>Width of the spectral windows in Hz (the spws will be centered at each BB).</description>
-      <value>2.e9</value>
-    </param>
+      <param type="any" name="V" mustexist="false">
+	<description>>List of Stokes V (in Jy) for the sources defined above. Default is no source. Example: [0.0] for no V signal. These values are referred to the LO frequency.</description>
+	<value>[]</value>
+      </param>
 
+      <param type="any" name="RM" mustexist="false">
+	<description>List of Rotation Measures (RM, in rad/m**2.) for the sources defined above. Default is no source. Example: [0.0] for no RM.</description>
+	<value>[]</value>
+      </param>
 
-    <param type="int" name="nchan" mustexist="false">
-      <description>Number of channels in each spw (all spws will have the same number of channels).</description>
-      <value>8</value>
-    </param>
+      <param type="any" name="spec_index" mustexist="false">
+	<description>List of spectral indices for the sources defined above. Default is no source. Example: [0.0] for a flat spectrum.</description>
+	<value>[]</value>
+      </param>
 
-    <param type="any" name="model_image" mustexist="false">
-      <description>List of four images (Stokes I, Q, U, and V, respectively) to be used as observed extended sources. Image cubes are allowed. Default is to NOT simulate extended sources. BEWARE OF THE CURRENT ALMA LIMITATION for extended sources (should fall within the inner 1/3 of the primary beam FWHM).</description>
-      <value>[]</value>
-    </param>
+      <param type="string" name="spectrum_file" mustexist="false">
+	<description>File with user-defined spectra of I, Q, U, and V. See help for details about the file format. This source WILL BE ADDED to all the other sources defined in the model_image model and in the I, Q, U, V, RM, and spec_index lists.</description>
+	<value></value>
+      </param>
 
+      <param type="string" name="incenter" mustexist="false">
+	<description>Coordinates of the observed source (will override the coordinates defined in model_image, if an image is being used). This keyword MUST BE defined.</description>
+	<value>J2000 00h00m00.00 -00d00m00.00</value>
+      </param>
 
-    <param type="any" name="I" mustexist="false">
-      <description>List of Stokes I (in Jy) for a set of point sources to simulate. All these sources will be located at the field center (currently, only point sources at the field center can be simulated; source offsets will be implemented in the future). Default is NO source. The flux density is referred to the LO frequency. Example: [1.0] for a 1Jy source.</description>
-      <value>[]</value>
-    </param>
+      <param type="string" name="incell" mustexist="false">
+	<description>Pixel size of the model_image (will override the original value stored in the image). Default is to use the original image cellsize. All the Stokes images (I, Q, U, and V) will be set the same way. USE WITH CARE.</description>
+	<value></value>
+      </param>
 
-    <param type="any" name="Q" mustexist="false">
-      <description>List of Stokes Q (in Jy) for the sources defined above. Default is no source. Example: [0.0] for no Q signal. These values are referred to the LO frequency.</description>
-      <value>[]</value>
-    </param>
+      <param type="string" name="inbright" mustexist="false">
+	<description>Peak intensity of the model_image (will override the original value stored in the image). Default is to use the original brightness unit. All the Stokes images (I, Q, U, and V) will be set the same way. USE WITH CARE.</description>
+	<value></value>
+      </param>
 
-    <param type="any" name="U" mustexist="false">
-      <description>>List of Stokes U (in Jy) for the sources defined above. Default is no source. Example: [0.0] for no U signal. These values are referred to the LO frequency.</description>
-      <value>[]</value>
-    </param>
+      <param type="string" name="inwidth" mustexist="false">
+	<description>Width of the frequency channels in the model_image (will override the original value stored in the image). Default is to use the original width. All the Stokes images (I, Q, U, and V) will be set the same way. USE WITH CARE.</description>
+	<value></value>
+      </param>
 
-    <param type="any" name="V" mustexist="false">
-      <description>>List of Stokes V (in Jy) for the sources defined above. Default is no source. Example: [0.0] for no V signal. These values are referred to the LO frequency.</description>
-      <value>[]</value>
-    </param>
+      <param type="any" name="H0" mustexist="false">
+	<description>Hour angle at the start of the observations (in hr).</description>
+	<value>-1.5</value>
+      </param>
 
+      <param type="any" name="onsource_time" mustexist="false">
+	<description>Integration time over the source (in hr). Default is 1 hr for a total observing time of 3h (i.e., 33% time).</description>
+	<value>1.0</value>
+      </param>
 
-    <param type="any" name="RM" mustexist="false">
-      <description>List of Rotation Measures (RM, in rad/m**2.) for the sources defined above. Default is no source. Example: [0.0] for no RM.</description>
-      <value>[]</value>
-    </param>
+      <param type="any" name="observe_time" mustexist="false">
+	<description>Total observing time in hr.</description>
+	<value>3.0</value>
+      </param>
 
-    <param type="any" name="spec_index" mustexist="false">
-      <description>List of spectral indices for the sources defined above. Default is no source. Example: [0.0] for a flat spectrum.</description>
-      <value>[]</value>
-    </param>
+      <param type="string" name="visib_time" mustexist="false">
+	<description>Integration time per visibility (in seconds). This is a string.</description>
+	<value>6s</value>
+      </param>
 
-    <param type="string" name="spectrum_file" mustexist="false">
-      <description>File with user-defined spectra of I, Q, U, and V. See help for details about the file format. This source WILL BE ADDED to all the other sources defined in the model_image model and in the I, Q, U, V, RM, and spec_index lists.</description>
-      <value></value>
-    </param>
+      <param type="int" name="nscan" mustexist="false">
+	<description>Number of scans on the source (will be all of equal length).</description>
+	<value>50</value>
+      </param>
 
-    <param type="string" name="incenter" mustexist="false">
-      <description>Coordinates of the observed source (will override the coordinates defined in model_image, if an image is being used). This keyword MUST BE defined.</description>
-      <value>J2000 00h00m00.00 -00d00m00.00</value>
-    </param>
+      <param type="any" name="corrupt" mustexist="false">
+	<description>Whether to add noise to the visibilities.</description>
+	<value>True</value>
+      </param>
 
-    <param type="string" name="incell" mustexist="false">
-      <description>Pixel size of the model_image (will override the original value stored in the image). Default is to use the original image cellsize. All the Stokes images (I, Q, U, and V) will be set the same way. USE WITH CARE.</description>
-      <value></value>
-    </param>
+      <param type="int" name="seed" mustexist="false">
+	<description>Seed of the random number generator in the sm tool.</description>
+	<value>42</value>
+      </param>
 
-    <param type="string" name="inbright" mustexist="false">
-      <description>Peak intensity of the model_image (will override the original value stored in the image). Default is to use the original brightness unit. All the Stokes images (I, Q, U, and V) will be set the same way. USE WITH CARE.</description>
-      <value></value>
-    </param>
+      <param type="any" name="Dt_amp" mustexist="false">
+	<description>Typical absolute value of the Dterms (real and imag). The actual values will be computed from a random Gaussian distribution of width Dt_amp.Default is to assume a perfect calibration of the Dterms.</description>
+	<value>0.0</value>
+      </param>
 
-    <param type="string" name="inwidth" mustexist="false">
-      <description>Width of the frequency channels in the model_image (will override the original value stored in the image). Default is to use the original width. All the Stokes images (I, Q, U, and V) will be set the same way. USE WITH CARE.</description>
-      <value></value>
-    </param>
+      <param type="any" name="Dt_noise" mustexist="false">
+	<description>Typical residual channel noise in the Dterms (real and imag). The actual values for each frequency channel will be those of Dt_amp PLUS a random Gaussian distribution of width Dt_noise. Default is 0.001, similar to the spectral spread of Dterms seen in the SV ALMA polarization data (see the CASA Guide).</description>
+	<value>0.001</value>
+      </param>
 
-    <param type="any" name="H0" mustexist="false">
-      <description>Hour angle at the start of the observations (in hr).</description>
-      <value>-1.5</value>
-    </param>
+      <param type="any" name="tau0" mustexist="false">
+	<description>Atmospheric opacity at zenith.</description>
+	<value>0.0</value>
+      </param>
 
-    <param type="any" name="onsource_time" mustexist="false">
-      <description>Integration time over the source (in hr). Default is 1 hr for a total observing time of 3h (i.e., 33% time).</description>
-      <value>1.0</value>
-    </param>
+      <param type="any" name="t_sky" mustexist="false">
+	<description>Sky temperature (in K).</description>
+	<value>250.0</value>
+      </param>
 
-    <param type="any" name="observe_time" mustexist="false">
-      <description>Total observing time in hr.</description>
-      <value>3.0</value>
-    </param>
+      <param type="any" name="t_ground" mustexist="false">
+	<description>Ground temperature (in K).</description>
+	<value>270.0</value>
+      </param>
 
-    <param type="string" name="visib_time" mustexist="false">
-      <description>Integration time per visibility (in seconds). This is a string.</description>
-      <value>6s</value>
-    </param>
+      <param type="any" name="t_receiver" mustexist="false">
+	<description>Receiver temperature (in K).</description>
+	<value>50.0</value>
+      </param>
+    </input>
 
-    <param type="int" name="nscan" mustexist="false">
-      <description>Number of scans on the source (will be all of equal length).</description>
-      <value>50</value>
-    </param>
+    <returns type="bool"/>
 
-    <param type="any" name="corrupt" mustexist="false">
-      <description>Whether to add noise to the visibilities.</description>
-      <value>True</value>
-    </param>
-
-    <param type="int" name="seed" mustexist="false">
-      <description>Seed of the random number generator in the sm tool.</description>
-      <value>42</value>
-    </param>
-
-    <param type="any" name="Dt_amp" mustexist="false">
-      <description>Typical absolute value of the Dterms (real and imag). The actual values will be computed from a random Gaussian distribution of width Dt_amp.Default is to assume a perfect calibration of the Dterms.</description>
-      <value>0.0</value>
-    </param>
-
-    <param type="any" name="Dt_noise" mustexist="false">
-      <description>Typical residual channel noise in the Dterms (real and imag). The actual values for each frequency channel will be those of Dt_amp PLUS a random Gaussian distribution of width Dt_noise. Default is 0.001, similar to the spectral spread of Dterms seen in the SV ALMA polarization data (see the CASA Guide).</description>
-      <value>0.001</value>
-    </param>
-
-
-    <param type="any" name="tau0" mustexist="false">
-      <description>Atmospheric opacity at zenith.</description>
-      <value>0.0</value>
-    </param>
-
-    <param type="any" name="t_sky" mustexist="false">
-      <description>Sky temperature (in K).</description>
-      <value>250.0</value>
-    </param>
-
-    <param type="any" name="t_ground" mustexist="false">
-      <description>Ground temperature (in K).</description>
-      <value>270.0</value>
-    </param>
-
-    <param type="any" name="t_receiver" mustexist="false">
-      <description>Receiver temperature (in K).</description>
-      <value>50.0</value>
-    </param>
-
-
-</input>
-
-  <returns type="bool"/>
-
-  <example>
-
+    <example>
   EXAMPLES OF THE USE OF POLSIMULATE:
 
-1.- Simulate only a point source with constant 10% polarization 
+1.- Simulate only a point source with constant 10% polarization
 and steep spectrum (no V Stokes):
 
 model_image=[]
@@ -213,7 +199,7 @@ I = [1.0], Q = [0.1], U = [0.], V = [0.], RM = [0.], spec_index = [-1.0]
 spectrum_file = ''
 
 
-4.- Simulate a point source with a user-defined 
+4.- Simulate a point source with a user-defined
 spectrum of I, Q, U, and V:
 
 model_image=[]
@@ -221,7 +207,7 @@ I = [], Q = [], U = [], V = [], RM = [], spec_index = []
 spectrum_file='my_spectrum.dat'
 
 
-The format of my_spectrum is an ASCII file with several 
+The format of my_spectrum is an ASCII file with several
 rows (one row per frequency). The format of each row is:
 
 FREQUENCY (HZ)    I (Jy)    Q (Jy)    U (Jy)  V (Jy)
@@ -229,23 +215,15 @@ FREQUENCY (HZ)    I (Jy)    Q (Jy)    U (Jy)  V (Jy)
 Some example rows (for a Band 6 simulation) could be:
 
 246.e9   1.0   0.07   0.05   0.00
-247.e9   1.2   0.06   0.05   0.00 
+247.e9   1.2   0.06   0.05   0.00
 248.e9   1.3   0.05   0.04   0.00
 ...
 
 
-The spectrum will be INTERPOLATED to the frequencies 
+The spectrum will be INTERPOLATED to the frequencies
 of the spectral windows in the measurement set. BEWARE
 and check that the spw frequencies are properly covered
 by the spectrum defined in the spectrum file!
-
-
-
-
-
-</example>
-</task>
-
+    </example>
+  </task>
 </casaxml>
-
-
