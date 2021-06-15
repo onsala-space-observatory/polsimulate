@@ -7,7 +7,7 @@ xsi:schemaLocation="http://casa.nrao.edu/schema/casa.xsd
 file:///opt/casa/code/xmlcasa/xml/casa.xsd">
 
   <task type="function" name="polsimulate" category="analysis">
-    <shortdescription>Basic simulator of ALMA/J-VLA full-polarization observations. The output should be imaged with CLEAN (with stokes=IQUV) and the polarization vectors should be computed with immath (with options poli and pola). See the ALMA Polarization CASA Guide for more information.</shortdescription>
+    <shortdescription>Basic simulator of ALMA/J-VLA full-polarization observations.</shortdescription>
     <description>Basic simulator of ALMA/J-VLA full-polarization observations. The output should be imaged with CLEAN (with stokes=IQUV) and the polarization vectors should be computed with immath (with options poli and pola). See the ALMA Polarization CASA Guide for more information.</description>
 
     <input>
