@@ -62,7 +62,6 @@ tb = gentools(['tb'])[0]
 
 __version__ = '1.2'
 
-#####################
 # UNIT TEST LINES:
 if __name__ == '__main__':
     vis = '/media/marti/LaCie_3/DATA/NO_BACKUP/polsimulate_output.ms'
@@ -110,7 +109,6 @@ if __name__ == '__main__':
     seed = 42
     corrupt = False
     feed = 'linear'
-##################
 
 
 def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg', feed='linear',
@@ -172,15 +170,14 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         printError('Unknown feed %s' % feed)
 
 
-# Load the different models:
+    # Load the different models:
 
-# Point source:
+    # Point source:
     if len(set([len(I), len(Q), len(U), len(V), len(RM), len(spec_index)])) > 1:
         printError(
             "ERROR! I, Q, U, V, RM, and spec_index should all have the same length!")
 
-
-# Point source (user-defined spectrum:
+    # Point source (user-defined spectrum:
     ismodel = False
     if type(spectrum_file) is str and len(spectrum_file) > 0:
         if not os.path.exists(spectrum_file):
@@ -200,7 +197,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 interpQ = spint.interp1d(model2[0, :], model2[2, :])
                 interpU = spint.interp1d(model2[0, :], model2[3, :])
                 interpV = spint.interp1d(model2[0, :], model2[4, :])
-            except:
+            except Exception:
                 printError("ERROR! spectrum_file has an incorrect format!")
 
     # Extended source (cube):
@@ -235,7 +232,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         antlist)
 
 
-# Setting noise
+    # Setting noise
     if corrupt:
         eta_p, eta_s, eta_b, eta_t, eta_q, t_rx = util.noisetemp(
             telescope=array, freq='%.9fHz' % (LO))
@@ -253,8 +250,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     sm.open(vis)
 
 
-# Setting the observatory and the observation:
-
+    # Setting the observatory and the observation:
     ALMA = me.observatory(array)
     mount = 'alt-az'
     refdate = '2017/01/01/00:00:00'
@@ -277,8 +273,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     ModV = [np.zeros(nchan) for i in BBs]
 
 
-# Spectral windows and D-terms:
-
+    # Spectral windows and D-terms:
     corrp = {'linear': 'XX YY XY YX', 'circular': 'RR LL RL LR'}
 
     for i in range(len(BBs)):
@@ -299,10 +294,10 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             DtY = [[0., 0.] for j in stnx]
 
         if Dt_noise > 0.0:
-            dtermsX.append([(np.random.normal(DtX[j][0], Dt_noise, nchan)+1.j *
-                             np.random.normal(DtX[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
-            dtermsY.append([(np.random.normal(DtY[j][0], Dt_noise, nchan)+1.j *
-                             np.random.normal(DtY[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
+            dtermsX.append([(np.random.normal(DtX[j][0], Dt_noise, nchan)+1.j
+                             * np.random.normal(DtX[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
+            dtermsY.append([(np.random.normal(DtY[j][0], Dt_noise, nchan)+1.j
+                             * np.random.normal(DtY[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
         else:
             dtermsX.append([np.zeros(nchan, dtype=np.complex128)
                             for j in stnx])
@@ -310,8 +305,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                             for j in stnx])
 
 
-# Compute point models:
-
+        # Compute point models:
         if len(I) > 0:
             Lam2 = np.power(299792458./spwFreqs[i], 2.)
             LamLO2 = (299792458./LO)**2.
@@ -331,12 +325,12 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             ModV[i] += interpV(spwFreqs[i])
 
 
-# CASA sm tool FAILS with X Y receiver. Will change it later:
+    # CASA sm tool FAILS with X Y receiver. Will change it later:
     #  sm.setfeed(mode='perfect R L',pol=[''])
     #  sm.setauto(0.0)
 
 
-# Field name:
+    # Field name:
     if len(model_image) > 0:
 
         source = '.'.join(os.path.basename(model_image[0]).split('.')[:-1])
@@ -354,8 +348,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 referencetime=mereftime)
 
 
-# Set scans:
-
+    # Set scans:
     starttimes = []
     stoptimes = []
     sources = []
@@ -377,8 +370,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     sm.close()
 
 
-# Change feeds to XY:
-
+    # Change feeds to XY:
     if feed == 'linear':
 
         printMsg(' CHANGING FEEDS TO X-Y\n')
@@ -389,8 +381,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         tb.putcol('POLARIZATION_TYPE', pols)
         tb.close()
 
-######
-# Computing par angle:
+    # Computing par angle:
     ms.open(vis)
     ms.selectinit(datadescid=0)
     temp = ms.getdata(['axis_info', 'ha'], ifraxis=True)
@@ -414,8 +405,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     PAtime = spint.interp1d(Ts, ParAng)
 
-##############################
-# Create an auxiliary MS:
+    # Create an auxiliary MS:
     printMsg('Creating the auxiliary single-pol datasets')
     if feed == 'linear':
         polprods = ['XX', 'YY', 'XY', 'YX', 'I', 'Q', 'U', 'V']
@@ -440,8 +430,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                        nchannels=nchan, refcode="BARY",
                        stokes=polprods[0])
 
-#  sm.setfeed(mode='perfect R L',pol=[''])
-
+    #  sm.setfeed(mode='perfect R L',pol=[''])
     sm.setfield(sourcename=source, sourcedirection=incenter,
                 calcode="TARGET", distance='0m')
 
@@ -454,19 +443,15 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                            starttimes[n]], stoptimes=[stoptimes[n]], project='polsimulate')
 
     sm.close()
-##############################
 
-
-# Simulate Stokes parameters:
-
+    # Simulate Stokes parameters:
     clearcal(vis=dvis[0], addmodel=True)
     clearcal(vis=vis, addmodel=True)
 
     for dv in dvis[1:]:
         os.system('cp -r %s %s' % (dvis[0], dv))
 
-
-# Auxiliary arrays:
+    # Auxiliary arrays:
     ms.open(dvis[0])
     spwscans = []
     for n in range(len(spwnames)):
@@ -624,7 +609,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                         XYa[:] = dataQ[0, :, j] + 1.j*dataU[0, :, j]
                         YXa[:] = dataQ[0, :, j] - 1.j*dataU[0, :, j]
 
-    # Add leakage:
+                    # Add leakage:
                     XXb[:] = XXa + YYa*dtermsX[i][ant1[sc][j]]*np.conjugate(
                         dtermsX[i][ant2[sc][j]]) + XYa*np.conjugate(dtermsX[i][ant2[sc][j]]) + \
                         YXa*dtermsX[i][ant1[sc][j]]
@@ -636,7 +621,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                     YXb[:] = YXa + XXa*dtermsY[i][ant1[sc][j]] + YYa*np.conjugate(
                         dtermsX[i][ant2[sc][j]]) + XYa*dtermsY[i][ant1[sc][j]]*np.conjugate(dtermsX[i][ant2[sc][j]])
 
-    # Put back into sky frame:
+                    # Put back into sky frame:
                     if feed == 'linear':
                         XX[0, :, j] = (C*XXb + S*YXb)*C + (C*XYb+S*YYb)*S
                         YY[0, :, j] = -(S*XYb - C*YYb)*C + (S*XXb-C*YXb)*S
@@ -664,7 +649,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                         XY[0, :, j] = dataQ[0, :, j] + 1.j*dataU[0, :, j]
                         YX[0, :, j] = dataQ[0, :, j] - 1.j*dataU[0, :, j]
 
-    # Save:
+            # Save:
             print polprods[0]
             ms.open(str(dvis[0]), nomodify=False)
             ms.selectinit(datadescid=i)
@@ -707,8 +692,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     gc.collect()
 
-# The sm tool IS BROKEN for full-polarization datasets!
-
+    # The sm tool IS BROKEN for full-polarization datasets!
     if corrupt:
         printMsg('Corrupting')
         for i in range(len(BBs)):
@@ -725,7 +709,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 sm.corrupt()
                 sm.done()
 
-# Copy into full-pol ms:
+    # Copy into full-pol ms:
     printMsg('Saving')
 
     for i in range(len(BBs)):
@@ -759,6 +743,9 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
 
 if __name__ == '__main__':
-    polsimulate(vis, array_configuration, feed, LO, BBs, spw_width, nchan, model_image, I, Q, U, V, RM, spec_index,
-                spectrum_file, incenter, incell, inbright, inwidth, H0, onsource_time, observe_time, visib_time, nscan,
-                corrupt, seed, Dt_amp, Dt_noise, tau0, t_sky, t_ground, t_receiver)
+    polsimulate(vis, array_configuration, feed, LO, BBs, spw_width,
+                nchan, model_image, I, Q, U, V, RM, spec_index,
+                spectrum_file, incenter, incell, inbright, inwidth,
+                H0, onsource_time, observe_time, visib_time, nscan,
+                corrupt, seed, Dt_amp, Dt_noise, tau0, t_sky,
+                t_ground, t_receiver)
