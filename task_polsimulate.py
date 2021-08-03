@@ -121,12 +121,6 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 corrupt=True, seed=42,
                 Dt_amp=0.00, Dt_noise=0.001, tau0=0.0, t_sky=250.0, t_ground=270.0, t_receiver=50.0):
 
-    ########
-    # Lines for testing
-    #  return True
-    # if __name__=='__main__':
-    ########
-
     def printError(msg):
         print '\n', msg, '\n'
         casalog.post('PolSimulate: '+msg)
@@ -162,20 +156,17 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             printError(
                 "Frequency %.5fGHz does NOT correspond to any ALMA band!" % (LO/1.e9))
         else:
-            printMsg('This is a Band %s ALMA observation.\n' % selb)
+            printMsg('This is a Band %s ALMA observation.' % selb)
 
     if feed in ['linear', 'circular']:
         printMsg('Will simulate feeds in %s polarization basis' % feed)
     else:
         printError('Unknown feed %s' % feed)
 
-
     # Load the different models:
-
     # Point source:
     if len(set([len(I), len(Q), len(U), len(V), len(RM), len(spec_index)])) > 1:
-        printError(
-            "ERROR! I, Q, U, V, RM, and spec_index should all have the same length!")
+        printError("ERROR! I, Q, U, V, RM, and spec_index should all have the same length!")
 
     # Point source (user-defined spectrum:
     ismodel = False
@@ -228,9 +219,8 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     antlist = os.getenv("CASAPATH").split(
         ' ')[0] + "/data/alma/simmos/"+array_configuration
-    stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(
-        antlist)
-
+    stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(antlist)
+    antnames = ["A%02d" % (int(x)) for x in padnames]
 
     # Setting noise
     if corrupt:
@@ -248,7 +238,6 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     os.system('rm -rf '+vis)
     sm.open(vis)
-
 
     # Setting the observatory and the observation:
     ALMA = me.observatory(array)
@@ -271,7 +260,6 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     ModQ = [np.zeros(nchan) for i in BBs]
     ModU = [np.zeros(nchan) for i in BBs]
     ModV = [np.zeros(nchan) for i in BBs]
-
 
     # Spectral windows and D-terms:
     corrp = {'linear': 'XX YY XY YX', 'circular': 'RR LL RL LR'}
@@ -304,7 +292,6 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             dtermsY.append([np.zeros(nchan, dtype=np.complex128)
                             for j in stnx])
 
-
         # Compute point models:
         if len(I) > 0:
             Lam2 = np.power(299792458./spwFreqs[i], 2.)
@@ -324,15 +311,12 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             ModU[i] += interpU(spwFreqs[i])
             ModV[i] += interpV(spwFreqs[i])
 
-
     # CASA sm tool FAILS with X Y receiver. Will change it later:
     #  sm.setfeed(mode='perfect R L',pol=[''])
     #  sm.setauto(0.0)
 
-
     # Field name:
     if len(model_image) > 0:
-
         source = '.'.join(os.path.basename(model_image[0]).split('.')[:-1])
     else:
         source = 'POLSIM'
@@ -342,11 +326,10 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     mereftime = me.epoch('TAI', refdate)
 
-    printMsg(' Will shift the date of observation to match the Hour Angle range\n')
+    printMsg('Will shift the date of observation to match the Hour Angle range')
 
     sm.settimes(integrationtime=visib_time, usehourangle=usehourangle,
                 referencetime=mereftime)
-
 
     # Set scans:
     starttimes = []
@@ -369,11 +352,10 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     sm.close()
 
-
     # Change feeds to XY:
     if feed == 'linear':
 
-        printMsg(' CHANGING FEEDS TO X-Y\n')
+        printMsg('CHANGING FEEDS TO X-Y')
         tb.open(vis+'/FEED', nomodify=False)
         pols = tb.getcol('POLARIZATION_TYPE')
         pols[0][:] = 'X'
@@ -439,8 +421,9 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     for n in range(nscan):
         for sp in spwnames:
-            sm.observemany(sourcenames=[sources[n]], spwname=sp, starttimes=[
-                           starttimes[n]], stoptimes=[stoptimes[n]], project='polsimulate')
+            sm.observemany(sourcenames=[sources[n]], spwname=sp,
+                           starttimes=[starttimes[n]], stoptimes=[stoptimes[n]],
+                           project='polsimulate')
 
     sm.close()
 
@@ -468,39 +451,47 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     ntimes = np.shape(dataI)[-1]
 
-    printMsg(' Simulating X-Y feed observations')
-
+    printMsg('Simulating X-Y feed observations')
     PAs = {}
     ant1 = {}
     ant2 = {}
 
+    print "dvis[4]:", dvis[4]
     ms.open(dvis[4], nomodify=False)
 
     for i in range(len(BBs)):
+        print i, spwscans[i], spwscans[i].__class__
         for n in spwscans[i]:
+            print "initialize selection %d" % (i)
             ms.selectinit(datadescid=i)
+            print "select scan number %d" % (int(n))
             ms.select({'scan_number': int(n)})
             ants = ms.getdata(['antenna1', 'antenna2', 'time'])
+            print "ants", ants
             ant1[n] = np.copy(ants['antenna1'])
+            print "ant1[n]", ant1[n]
             ant2[n] = np.copy(ants['antenna2'])
+            print "ant2[n]", ant2[n]
             MJD = ants['time']
+            print "MJD", MJD
             PAs[n] = PAtime(MJD)
+            print "PAs[n]", PAs[n]
 
     ms.close()
 
-    print "\nSimulating Stokes I"
+    print "Simulating Stokes I"
     if len(Iim) > 0:
         ft(vis=dvis[4], model=Iim, usescratch=True)
 
-    print "\nSimulating Stokes Q"
+    print "Simulating Stokes Q"
     if len(Qim) > 0:
         ft(vis=dvis[5], model=Qim, usescratch=True)
 
-    print "\nSimulating Stokes U"
+    print "Simulating Stokes U"
     if len(Uim) > 0:
         ft(vis=dvis[6], model=Uim, usescratch=True)
 
-    print "\nSimulating Stokes V"
+    print "Simulating Stokes V"
     if len(Uim) > 0:
         ft(vis=dvis[7], model=Uim, usescratch=True)
 
@@ -739,8 +730,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     for dv in dvis:
         os.system('rm -rf %s' % dv)
 
-    print '\n DONE!\n'
-
+    print 'DONE!\n'
 
 if __name__ == '__main__':
     polsimulate(vis, array_configuration, feed, LO, BBs, spw_width,
