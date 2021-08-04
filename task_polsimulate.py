@@ -49,7 +49,8 @@
 import os
 import gc
 import numpy as np
-from simutil import *
+# from simutil import *
+import simutil
 import scipy.interpolate as spint
 from taskinit import gentools
 from clearcal_cli import clearcal_cli as clearcal
@@ -59,6 +60,7 @@ ms = gentools(['ms'])[0]
 sm = gentools(['sm'])[0]
 me = gentools(['me'])[0]
 tb = gentools(['tb'])[0]
+cs = gentools(['cs'])[0]
 
 __version__ = '1.2'
 
@@ -74,19 +76,17 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     def printError(msg):
         print '\n', msg, '\n'
-        casalog.post('PolSimulate: '+msg)
+        # casalog.post('PolSimulate: ' + msg)
         raise Exception(msg)
 
     def printMsg(msg):
         print '\n', msg, '\n'
-        casalog.post('PolSimulate: '+msg)
-
-    util = simutil('')
+        # casalog.post('PolSimuate: ' + msg)
 
     printMsg('POLSIMULATE - VERSION %s  - Nordic ARC Node' % __version__)
 
+    util = simutil.simutil('')
     array = array_configuration[:4].upper()
-
 
 # ALMA bands:
     Bands = {'3': [84, 119], '5': [163, 211], '6': [211, 275], '7': [
@@ -168,8 +168,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     if len(model_image) == 0 and len(I) == 0 and not ismodel:
         printError("ERROR! No model specified!")
 
-    antlist = os.getenv("CASAPATH").split(
-        ' ')[0] + "/data/alma/simmos/"+array_configuration
+    antlist = os.getenv("CASAPATH").split(' ')[0] + "/data/alma/simmos/" + array_configuration
     stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(antlist)
     antnames = ["A%02d" % (int(x)) for x in padnames]
 
@@ -312,7 +311,6 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     # Change feeds to XY:
     if feed == 'linear':
-
         printMsg('CHANGING FEEDS TO X-Y')
         tb.open(vis+'/FEED', nomodify=False)
         pols = tb.getcol('POLARIZATION_TYPE')
@@ -417,6 +415,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     print "dvis[4]:", dvis[4]
     ms.open(dvis[4], nomodify=False)
 
+    # import pdb; pdb.set_trace()
     for i in range(len(BBs)):
         print i, spwscans[i], spwscans[i].__class__
         for n in spwscans[i]:
