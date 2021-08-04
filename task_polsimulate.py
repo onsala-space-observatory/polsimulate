@@ -46,70 +46,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-import gc
-from simutil import *
 import os
+import gc
 import numpy as np
+from simutil import *
 import scipy.interpolate as spint
 from taskinit import gentools
 from clearcal_cli import clearcal_cli as clearcal
 from ft_cli import ft_cli as ft
-from simutil import *
+
 ms = gentools(['ms'])[0]
 sm = gentools(['sm'])[0]
 me = gentools(['me'])[0]
 tb = gentools(['tb'])[0]
 
 __version__ = '1.2'
-
-# UNIT TEST LINES:
-if __name__ == '__main__':
-    vis = '/media/marti/LaCie_3/DATA/NO_BACKUP/polsimulate_output.ms'
-    array_configuration = 'alma.out04.cfg'
-    incell = ''
-    inbright = ''
-    incenter = 'J2000 00h00m00.00 -00d00m00.00'
-    inwidth = ''
-
-    # TEST 1
-    #  impath = '/home/marti/WORKAREA/ARC/DiffPol/EXTENDED_POL/'
-    #  images = ['SFits.im','QFits.im','UFits.im']
-    #  model_image=[impath + imm for imm in images]
-    #  I = [0.2]; Q = [0.03]; U = [0.01]; RM = [1.e7]; spec_index = [0.0];
-    #  spectrum_file = '' #/home/marti/WORKAREA/ARC/ARC_TOOLS/PolSim/HOVATTA/model1.txt'
-    #  LO=100.e9; BBs = [0.] ; #BBs = [-4.e9,-2.e9,2.e9,4.e9];
-    #  spw_width = 2.e9; nchan = 16
-    #  corrupt = False
-
-    # TEST 2:
-    model_image = []
-    I = []
-    Q = []
-    U = []
-    RM = []
-    spec_index = []
-    spectrum_file = './HOVATTA/model2.txt'
-    LO = 233.e9
-    BBs = [-9.e9, 9.e9]  # BBs = [-4.e9,-2.e9,2.e9,4.e9]
-    spw_width = 1.8e9
-    nchan = 16
-    #  vis = 'polsimulate_output2.ms'
-
-    Dt_noise = 0.01
-    Dt_amp = 0.0
-    H0 = -1.5
-    onsource_time = 0.25
-    observe_time = 3.0
-    visib_time = '6s'
-    nscan = 5
-    t_receiver = 50.0
-    tau0 = 0.0
-    t_sky = 250.0
-    t_ground = 270.0
-    seed = 42
-    corrupt = False
-    feed = 'linear'
-
 
 def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg', feed='linear',
                 LO=100.e9, BBs=[-7.e9, -5.e9, 5.e9, 7.e9], spw_width=2.e9, nchan=128,
@@ -347,8 +298,15 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     for n in range(nscan):
         for sp in spwnames:
-            sm.observemany(sourcenames=[sources[n]], spwname=sp, starttimes=[
-                           starttimes[n]], stoptimes=[stoptimes[n]], project='polsimulate')
+            print "n:", n
+            print "observemany:"
+            print "sources:", sources[n]
+            print "spwname:", sp
+            print "starttimes:", starttimes[n]
+            print "stoptimes:", stoptimes[n]
+            sm.observemany(sourcenames=[sources[n]], spwname=sp,
+                           starttimes=[starttimes[n]], stoptimes=[stoptimes[n]],
+                           project='polsimulate')
 
     sm.close()
 
@@ -731,11 +689,3 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         os.system('rm -rf %s' % dv)
 
     print 'DONE!\n'
-
-if __name__ == '__main__':
-    polsimulate(vis, array_configuration, feed, LO, BBs, spw_width,
-                nchan, model_image, I, Q, U, V, RM, spec_index,
-                spectrum_file, incenter, incell, inbright, inwidth,
-                H0, onsource_time, observe_time, visib_time, nscan,
-                corrupt, seed, Dt_amp, Dt_noise, tau0, t_sky,
-                t_ground, t_receiver)
