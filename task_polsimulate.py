@@ -88,11 +88,12 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     util = simutil.simutil('')
     array = array_configuration[:4].upper()
 
-# ALMA bands:
-    Bands = {'3': [84, 119], '5': [163, 211], '6': [211, 275], '7': [
-        275, 370], '8': [385, 500], '9': [602, 720], '10': [787, 950]}
+    # ALMA bands:
+    Bands = {'3': [84, 119], '5': [163, 211], '6': [211, 275], '7': [275, 370],
+             '8': [385, 500], '9': [602, 720], '10': [787, 950]}
 
-# Receiver evector angles. Not used by now:
+    # Receiver evector angles. Not used by now:
+
     Pangs = {'3': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0, '10': 0}
 
     if array == 'ALMA':
@@ -104,8 +105,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 break
 
         if not found:
-            printError(
-                "Frequency %.5fGHz does NOT correspond to any ALMA band!" % (LO/1.e9))
+            printError("Frequency %.5fGHz does NOT correspond to any ALMA band!" % (LO/1.e9))
         else:
             printMsg('This is a Band %s ALMA observation.' % selb)
 
@@ -122,6 +122,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     # Point source (user-defined spectrum:
     ismodel = False
     if type(spectrum_file) is str and len(spectrum_file) > 0:
+        printMsg("Point source (user-defined spectrum ...")
         if not os.path.exists(spectrum_file):
             printError("ERROR! spectrum_file is not found!")
         else:
@@ -144,6 +145,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     # Extended source (cube):
     if type(model_image) is list:
+        printMsg("Extended source (cube) ...")
         if len(model_image) > 0:
             new_mod = [m + '.polsim' for m in model_image]
             for i in range(4):
@@ -168,14 +170,15 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     if len(model_image) == 0 and len(I) == 0 and not ismodel:
         printError("ERROR! No model specified!")
 
+
+    printMsg("Model specified ...")
     antlist = os.getenv("CASAPATH").split(' ')[0] + "/data/alma/simmos/" + array_configuration
     stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(antlist)
     antnames = ["A%02d" % (int(x)) for x in padnames]
 
     # Setting noise
     if corrupt:
-        eta_p, eta_s, eta_b, eta_t, eta_q, t_rx = util.noisetemp(
-            telescope=array, freq='%.9fHz' % (LO))
+        eta_p, eta_s, eta_b, eta_t, eta_q, t_rx = util.noisetemp(telescope=array, freq='%.9fHz' % (LO))
         eta_a = eta_p * eta_s * eta_b * eta_t
         if t_receiver != 0.0:
             t_rx = abs(t_receiver)
@@ -186,9 +189,11 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         Dt_noise = 0.0
         Dt_amp = 0.0
 
+    printMsg("remove %s  ..." % (vis))
     os.system('rm -rf '+vis)
     sm.open(vis)
 
+    printMsg("... done!")
     # Setting the observatory and the observation:
     ALMA = me.observatory(array)
     mount = 'alt-az'
@@ -196,11 +201,21 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     integ = visib_time
     usehourangle = True
 
+    printMsg("set configuration ...")
+    print("stnx:", stnx[0:3])
+    print("stny:", stny[0:3])
+    print("stnz:", stnz[0:3])
+    print("stnd:", stnd[0:3])
+    print("mount:", mount)
+    # print("nant:", nant)
+    print("antnames:", antnames[0:3])
+    print("padnames:", padnames[0:3])
     sm.setconfig(telescopename='ALMA', x=stnx, y=stny, z=stnz,
                  dishdiameter=stnd.tolist(),
-                 mount=mount, antname=antnames, padname=padnames,
+                 mount=mount, padname=padnames,
                  coordsystem='global', referencelocation=ALMA)
     spwnames = ['spw%i' % i for i in range(len(BBs))]
+    printMsg("... done!")
 
     dNu = spw_width/nchan/1.e9
     spwFreqs = []
@@ -215,6 +230,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     corrp = {'linear': 'XX YY XY YX', 'circular': 'RR LL RL LR'}
 
     for i in range(len(BBs)):
+        printMsg("next index %d: %f" % (i, BBs[i]))
         Nu0 = (LO+BBs[i]-spw_width/2.)/1.e9
         sm.setspwindow(spwname=spwnames[i], freq='%.8fGHz' % (Nu0),
                        deltafreq='%.9fGHz' % (dNu),
