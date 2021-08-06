@@ -1,4 +1,9 @@
+casa-*.log
 *.pyc
 mytasks.py
 polsimulate.py
+polsimulate_cli.py
 *~
+*.last
+*.im.polsim/
+polsimulate_output.*/
