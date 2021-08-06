@@ -75,12 +75,12 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 Dt_amp=0.00, Dt_noise=0.001, tau0=0.0, t_sky=250.0, t_ground=270.0, t_receiver=50.0):
 
     def printError(msg):
-        print '\n', msg, '\n'
+        print msg
         # casalog.post('PolSimulate: ' + msg)
         raise Exception(msg)
 
     def printMsg(msg):
-        print '\n', msg, '\n'
+        print msg
         # casalog.post('PolSimuate: ' + msg)
 
     printMsg('POLSIMULATE - VERSION %s  - Nordic ARC Node' % __version__)
@@ -202,14 +202,14 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     usehourangle = True
 
     printMsg("set configuration ...")
-    print("stnx:", stnx[0:3])
-    print("stny:", stny[0:3])
-    print("stnz:", stnz[0:3])
-    print("stnd:", stnd[0:3])
-    print("mount:", mount)
-    # print("nant:", nant)
-    print("antnames:", antnames[0:3])
-    print("padnames:", padnames[0:3])
+    print "stnx:", stnx[0:3]
+    print "stny:", stny[0:3]
+    print "stnz:", stnz[0:3]
+    print "stnd:", stnd[0:3]
+    print "mount:", mount
+    # print "nant:", nant
+    print "antnames:", antnames[0:3]
+    print "padnames:", padnames[0:3]
     sm.setconfig(telescopename='ALMA', x=stnx, y=stny, z=stnz,
                  dishdiameter=stnd.tolist(),
                  mount=mount, padname=padnames,
@@ -233,16 +233,12 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         printMsg("next index %d: %f" % (i, BBs[i]))
         Nu0 = (LO+BBs[i]-spw_width/2.)/1.e9
         sm.setspwindow(spwname=spwnames[i], freq='%.8fGHz' % (Nu0),
-                       deltafreq='%.9fGHz' % (dNu),
-                       freqresolution='%.9fGHz' % (dNu),
-                       nchannels=nchan, refcode="BARY",
-                       stokes=corrp[feed])
+                       deltafreq='%.9fGHz' % (dNu), freqresolution='%.9fGHz' % (dNu),
+                       nchannels=nchan, refcode="BARY", stokes=corrp[feed])
         spwFreqs.append(1.e9*np.linspace(Nu0, Nu0+dNu*nchan, nchan))
         if Dt_amp > 0.0:
-            DtX = [[np.random.normal(0., Dt_amp), np.random.normal(
-                0., Dt_noise)] for j in stnx]
-            DtY = [[np.random.normal(0., Dt_amp), np.random.normal(
-                0., Dt_noise)] for j in stnx]
+            DtX = [[np.random.normal(0., Dt_amp), np.random.normal(0., Dt_noise)] for j in stnx]
+            DtY = [[np.random.normal(0., Dt_amp), np.random.normal(0., Dt_noise)] for j in stnx]
         else:
             DtX = [[0., 0.] for j in stnx]
             DtY = [[0., 0.] for j in stnx]
@@ -253,10 +249,8 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             dtermsY.append([(np.random.normal(DtY[j][0], Dt_noise, nchan)+1.j
                              * np.random.normal(DtY[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
         else:
-            dtermsX.append([np.zeros(nchan, dtype=np.complex128)
-                            for j in stnx])
-            dtermsY.append([np.zeros(nchan, dtype=np.complex128)
-                            for j in stnx])
+            dtermsX.append([np.zeros(nchan, dtype=np.complex128) for j in stnx])
+            dtermsY.append([np.zeros(nchan, dtype=np.complex128) for j in stnx])
 
         # Compute point models:
         if len(I) > 0:
@@ -278,7 +272,7 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
             ModV[i] += interpV(spwFreqs[i])
 
     # CASA sm tool FAILS with X Y receiver. Will change it later:
-    #  sm.setfeed(mode='perfect R L',pol=[''])
+    #  sm.setfeed(mode='perfect R L', pol=[''])
     #  sm.setauto(0.0)
 
     # Field name:
@@ -287,15 +281,13 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     else:
         source = 'POLSIM'
 
-    sm.setfield(sourcename=source, sourcedirection=incenter,
-                calcode="TARGET", distance='0m')
+    sm.setfield(sourcename=source, sourcedirection=incenter, calcode="TARGET", distance='0m')
 
     mereftime = me.epoch('TAI', refdate)
 
     printMsg('Will shift the date of observation to match the Hour Angle range')
 
-    sm.settimes(integrationtime=visib_time, usehourangle=usehourangle,
-                referencetime=mereftime)
+    sm.settimes(integrationtime=visib_time, usehourangle=usehourangle, referencetime=mereftime)
 
     # Set scans:
     starttimes = []
@@ -356,7 +348,6 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     top = np.sin(HAs)*np.cos(Lat)
     bot = np.sin(Lat)*np.cos(Dec)-np.sin(Dec)*np.cos(HAs)*np.cos(Lat)
     ParAng = np.arctan2(top, bot)
-
     PAtime = spint.interp1d(Ts, ParAng)
 
     # Create an auxiliary MS:
@@ -385,11 +376,8 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                        stokes=polprods[0])
 
     #  sm.setfeed(mode='perfect R L',pol=[''])
-    sm.setfield(sourcename=source, sourcedirection=incenter,
-                calcode="TARGET", distance='0m')
-
-    sm.settimes(integrationtime=visib_time, usehourangle=usehourangle,
-                referencetime=mereftime)
+    sm.setfield(sourcename=source, sourcedirection=incenter, calcode="TARGET", distance='0m')
+    sm.settimes(integrationtime=visib_time, usehourangle=usehourangle, referencetime=mereftime)
 
     for n in range(nscan):
         for sp in spwnames:
@@ -431,9 +419,9 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     print "dvis[4]:", dvis[4]
     ms.open(dvis[4], nomodify=False)
 
-    # import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     for i in range(len(BBs)):
-        print i, spwscans[i], spwscans[i].__class__
+        print i, spwscans[i]
         for n in spwscans[i]:
             print "initialize selection %d" % (i)
             ms.selectinit(datadescid=i)
@@ -556,20 +544,14 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
                     # Visibilities in the antenna frame:
                     if feed == 'linear':
-                        XXa[:] = (dataI[0, :, j] + dataQ[0, :, j]
-                                  * C2 - dataU[0, :, j]*S2)
-                        YYa[:] = (dataI[0, :, j] - dataQ[0, :, j]
-                                  * C2 + dataU[0, :, j]*S2)
-                        XYa[:] = dataU[0, :, j]*C2 + \
-                            dataQ[0, :, j]*S2 + 1.j*dataV[0, :, j]
-                        YXa[:] = dataU[0, :, j]*C2 + \
-                            dataQ[0, :, j]*S2 - 1.j*dataV[0, :, j]
+                        XXa[:] = (dataI[0, :, j] + dataQ[0, :, j] * C2 - dataU[0, :, j]*S2)
+                        YYa[:] = (dataI[0, :, j] - dataQ[0, :, j] * C2 + dataU[0, :, j]*S2)
+                        XYa[:] = dataU[0, :, j]*C2 + dataQ[0, :, j]*S2 + 1.j*dataV[0, :, j]
+                        YXa[:] = dataU[0, :, j]*C2 + dataQ[0, :, j]*S2 - 1.j*dataV[0, :, j]
 
                     if feed == 'circular':
-                        XXa[:] = (dataI[0, :, j] + dataV[0, :, j]) * \
-                            EPA  # *C2 - dataU[0,:,j]*S2)
-                        YYa[:] = (dataI[0, :, j] - dataV[0, :, j]) * \
-                            EMA  # + dataU[0,:,j]*S2)
+                        XXa[:] = (dataI[0, :, j] + dataV[0, :, j]) * EPA  # *C2 - dataU[0,:,j]*S2)
+                        YYa[:] = (dataI[0, :, j] - dataV[0, :, j]) * EMA  # + dataU[0,:,j]*S2)
                         XYa[:] = dataQ[0, :, j] + 1.j*dataU[0, :, j]
                         YXa[:] = dataQ[0, :, j] - 1.j*dataU[0, :, j]
 
@@ -593,8 +575,8 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                         YX[0, :, j] = -(S*XXb - C*YXb)*C - (S*XYb - C*YYb)*S
 
                     if feed == 'circular':
-                        XX[0, :, j] = XXa[:]*EMA
-                        YY[0, :, j] = YYa[:]*EPA
+                        XX[0, :, j] = XXa[:] * EMA
+                        YY[0, :, j] = YYa[:] * EPA
                         XY[0, :, j] = XYa[:]
                         YX[0, :, j] = YXa[:]
 
