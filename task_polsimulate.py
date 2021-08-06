@@ -49,6 +49,7 @@
 import os
 import gc
 import numpy as np
+
 # from simutil import *
 import simutil
 import scipy.interpolate as spint
@@ -56,68 +57,104 @@ from taskinit import gentools
 from clearcal_cli import clearcal_cli as clearcal
 from ft_cli import ft_cli as ft
 
-ms = gentools(['ms'])[0]
-sm = gentools(['sm'])[0]
-me = gentools(['me'])[0]
-tb = gentools(['tb'])[0]
-cs = gentools(['cs'])[0]
+ms = gentools(["ms"])[0]
+sm = gentools(["sm"])[0]
+me = gentools(["me"])[0]
+tb = gentools(["tb"])[0]
+cs = gentools(["cs"])[0]
 
-__version__ = '1.2'
+__version__ = "1.2"
 
-def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg', feed='linear',
-                LO=100.e9, BBs=[-7.e9, -5.e9, 5.e9, 7.e9], spw_width=2.e9, nchan=128,
-                model_image=[], I=[], Q=[], U=[], V=[], RM=[], spec_index=[],
-                spectrum_file='',
-                incenter='J2000 00h00m00.00 -00d00m00.00', incell='', inbright='',
-                inwidth='', H0=-1.5,
-                onsource_time=1.5, observe_time=3.0, visib_time='6s', nscan=50,
-                corrupt=True, seed=42,
-                Dt_amp=0.00, Dt_noise=0.001, tau0=0.0, t_sky=250.0, t_ground=270.0, t_receiver=50.0):
 
+def polsimulate(
+    vis="polsimulate_output.ms",
+    array_configuration="alma.out04.cfg",
+    feed="linear",
+    LO=100.0e9,
+    BBs=[-7.0e9, -5.0e9, 5.0e9, 7.0e9],
+    spw_width=2.0e9,
+    nchan=128,
+    model_image=[],
+    I=[],
+    Q=[],
+    U=[],
+    V=[],
+    RM=[],
+    spec_index=[],
+    spectrum_file="",
+    incenter="J2000 00h00m00.00 -00d00m00.00",
+    incell="",
+    inbright="",
+    inwidth="",
+    H0=-1.5,
+    onsource_time=1.5,
+    observe_time=3.0,
+    visib_time="6s",
+    nscan=50,
+    corrupt=True,
+    seed=42,
+    Dt_amp=0.00,
+    Dt_noise=0.001,
+    tau0=0.0,
+    t_sky=250.0,
+    t_ground=270.0,
+    t_receiver=50.0,
+):
     def printError(msg):
-        print msg
+        print(msg)
         # casalog.post('PolSimulate: ' + msg)
         raise Exception(msg)
 
     def printMsg(msg):
-        print msg
+        print(msg)
         # casalog.post('PolSimuate: ' + msg)
 
-    printMsg('POLSIMULATE - VERSION %s  - Nordic ARC Node' % __version__)
+    printMsg("POLSIMULATE - VERSION %s  - Nordic ARC Node" % __version__)
 
-    util = simutil.simutil('')
+    util = simutil.simutil("")
     array = array_configuration[:4].upper()
 
     # ALMA bands:
-    Bands = {'3': [84, 119], '5': [163, 211], '6': [211, 275], '7': [275, 370],
-             '8': [385, 500], '9': [602, 720], '10': [787, 950]}
+    Bands = {
+        "3": [84, 119],
+        "5": [163, 211],
+        "6": [211, 275],
+        "7": [275, 370],
+        "8": [385, 500],
+        "9": [602, 720],
+        "10": [787, 950],
+    }
 
     # Receiver evector angles. Not used by now:
 
-    Pangs = {'3': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0, '10': 0}
+    Pangs = {"3": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0, "10": 0}
 
-    if array == 'ALMA':
+    if array == "ALMA":
         found = False
         for band in Bands.keys():
-            if LO/1.e9 > Bands[band][0] and LO/1.e9 < Bands[band][1]:
+            if LO / 1.0e9 > Bands[band][0] and LO / 1.0e9 < Bands[band][1]:
                 found = True
                 selb = band
                 break
 
         if not found:
-            printError("Frequency %.5fGHz does NOT correspond to any ALMA band!" % (LO/1.e9))
+            printError(
+                "Frequency %.5fGHz does NOT correspond to any ALMA band!" % (LO / 1.0e9)
+            )
         else:
-            printMsg('This is a Band %s ALMA observation.' % selb)
+            printMsg("This is a Band %s ALMA observation." % selb)
 
-    if feed in ['linear', 'circular']:
-        printMsg('Will simulate feeds in %s polarization basis' % feed)
+    if feed in ["linear", "circular"]:
+        printMsg("Will simulate feeds in %s polarization basis" % feed)
     else:
-        printError('Unknown feed %s' % feed)
+        printError("Unknown feed %s" % feed)
 
     # Load the different models:
     # Point source:
     if len(set([len(I), len(Q), len(U), len(V), len(RM), len(spec_index)])) > 1:
-        printError("ERROR! I, Q, U, V, RM, and spec_index should all have the same length!")
+        printError(
+            "ERROR! I, Q, U, V, RM, and spec_index should all have the same length!"
+        )
 
     # Point source (user-defined spectrum:
     ismodel = False
@@ -147,38 +184,52 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     if type(model_image) is list:
         printMsg("Extended source (cube) ...")
         if len(model_image) > 0:
-            new_mod = [m + '.polsim' for m in model_image]
+            new_mod = [m + ".polsim" for m in model_image]
             for i in range(4):
-                os.system('rm -rf %s' % new_mod[i])
-                returnpars = util.modifymodel(model_image[i], new_mod[i],
-                                              inbright, incenter, incell,
-                                              incenter, inwidth, 0,
-                                              flatimage=False)
+                os.system("rm -rf %s" % new_mod[i])
+                returnpars = util.modifymodel(
+                    model_image[i],
+                    new_mod[i],
+                    inbright,
+                    incenter,
+                    incell,
+                    incenter,
+                    inwidth,
+                    0,
+                    flatimage=False,
+                )
             Iim, Qim, Uim, Vim = new_mod
         else:
-            Iim = ''
-            Qim = ''
-            Uim = ''
-            Vim = ''
+            Iim = ""
+            Qim = ""
+            Uim = ""
+            Vim = ""
     else:
         printError("ERROR! Unkown model_image!")
 
-    if len(Iim) > 0 and not (os.path.exists(Iim) and os.path.exists(Qim)
-                             and os.path.exists(Uim) and os.path.exists(Vim)):
+    if len(Iim) > 0 and not (
+        os.path.exists(Iim)
+        and os.path.exists(Qim)
+        and os.path.exists(Uim)
+        and os.path.exists(Vim)
+    ):
         printError("ERROR! one or more model_image components does not exist!")
 
     if len(model_image) == 0 and len(I) == 0 and not ismodel:
         printError("ERROR! No model specified!")
 
-
     printMsg("Model specified ...")
-    antlist = os.getenv("CASAPATH").split(' ')[0] + "/data/alma/simmos/" + array_configuration
+    antlist = (
+        os.getenv("CASAPATH").split(" ")[0] + "/data/alma/simmos/" + array_configuration
+    )
     stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(antlist)
     antnames = ["A%02d" % (int(x)) for x in padnames]
 
     # Setting noise
     if corrupt:
-        eta_p, eta_s, eta_b, eta_t, eta_q, t_rx = util.noisetemp(telescope=array, freq='%.9fHz' % (LO))
+        eta_p, eta_s, eta_b, eta_t, eta_q, t_rx = util.noisetemp(
+            telescope=array, freq="%.9fHz" % (LO)
+        )
         eta_a = eta_p * eta_s * eta_b * eta_t
         if t_receiver != 0.0:
             t_rx = abs(t_receiver)
@@ -190,34 +241,41 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         Dt_amp = 0.0
 
     printMsg("remove %s  ..." % (vis))
-    os.system('rm -rf '+vis)
+    os.system("rm -rf " + vis)
     sm.open(vis)
 
     printMsg("... done!")
     # Setting the observatory and the observation:
     ALMA = me.observatory(array)
-    mount = 'alt-az'
-    refdate = '2017/01/01/00:00:00'
+    mount = "alt-az"
+    refdate = "2017/01/01/00:00:00"
     integ = visib_time
     usehourangle = True
 
     printMsg("set configuration ...")
-    print "stnx:", stnx[0:3]
-    print "stny:", stny[0:3]
-    print "stnz:", stnz[0:3]
-    print "stnd:", stnd[0:3]
-    print "mount:", mount
-    # print "nant:", nant
-    print "antnames:", antnames[0:3]
-    print "padnames:", padnames[0:3]
-    sm.setconfig(telescopename='ALMA', x=stnx, y=stny, z=stnz,
-                 dishdiameter=stnd.tolist(),
-                 mount=mount, padname=padnames,
-                 coordsystem='global', referencelocation=ALMA)
-    spwnames = ['spw%i' % i for i in range(len(BBs))]
+    print("stnx:", stnx[0:3])
+    print("stny:", stny[0:3])
+    print("stnz:", stnz[0:3])
+    print("stnd:", stnd[0:3])
+    print("mount:", mount)
+    # print("nant:", nant)
+    print("antnames:", antnames[0:3])
+    print("padnames:", padnames[0:3])
+    sm.setconfig(
+        telescopename="ALMA",
+        x=stnx,
+        y=stny,
+        z=stnz,
+        dishdiameter=stnd.tolist(),
+        mount=mount,
+        padname=padnames,
+        coordsystem="global",
+        referencelocation=ALMA,
+    )
+    spwnames = ["spw%i" % i for i in range(len(BBs))]
     printMsg("... done!")
 
-    dNu = spw_width/nchan/1.e9
+    dNu = spw_width / nchan / 1.0e9
     spwFreqs = []
     dtermsX = []
     dtermsY = []
@@ -227,43 +285,70 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     ModV = [np.zeros(nchan) for i in BBs]
 
     # Spectral windows and D-terms:
-    corrp = {'linear': 'XX YY XY YX', 'circular': 'RR LL RL LR'}
+    corrp = {"linear": "XX YY XY YX", "circular": "RR LL RL LR"}
 
     for i in range(len(BBs)):
         printMsg("next index %d: %f" % (i, BBs[i]))
-        Nu0 = (LO+BBs[i]-spw_width/2.)/1.e9
-        sm.setspwindow(spwname=spwnames[i], freq='%.8fGHz' % (Nu0),
-                       deltafreq='%.9fGHz' % (dNu), freqresolution='%.9fGHz' % (dNu),
-                       nchannels=nchan, refcode="BARY", stokes=corrp[feed])
-        spwFreqs.append(1.e9*np.linspace(Nu0, Nu0+dNu*nchan, nchan))
+        Nu0 = (LO + BBs[i] - spw_width / 2.0) / 1.0e9
+        sm.setspwindow(
+            spwname=spwnames[i],
+            freq="%.8fGHz" % (Nu0),
+            deltafreq="%.9fGHz" % (dNu),
+            freqresolution="%.9fGHz" % (dNu),
+            nchannels=nchan,
+            refcode="BARY",
+            stokes=corrp[feed],
+        )
+        spwFreqs.append(1.0e9 * np.linspace(Nu0, Nu0 + dNu * nchan, nchan))
         if Dt_amp > 0.0:
-            DtX = [[np.random.normal(0., Dt_amp), np.random.normal(0., Dt_noise)] for j in stnx]
-            DtY = [[np.random.normal(0., Dt_amp), np.random.normal(0., Dt_noise)] for j in stnx]
+            DtX = [
+                [np.random.normal(0.0, Dt_amp), np.random.normal(0.0, Dt_noise)]
+                for j in stnx
+            ]
+            DtY = [
+                [np.random.normal(0.0, Dt_amp), np.random.normal(0.0, Dt_noise)]
+                for j in stnx
+            ]
         else:
-            DtX = [[0., 0.] for j in stnx]
-            DtY = [[0., 0.] for j in stnx]
+            DtX = [[0.0, 0.0] for j in stnx]
+            DtY = [[0.0, 0.0] for j in stnx]
 
         if Dt_noise > 0.0:
-            dtermsX.append([(np.random.normal(DtX[j][0], Dt_noise, nchan)+1.j
-                             * np.random.normal(DtX[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
-            dtermsY.append([(np.random.normal(DtY[j][0], Dt_noise, nchan)+1.j
-                             * np.random.normal(DtY[j][1], Dt_noise, nchan)) for j in range(len(DtX))])
+            dtermsX.append(
+                [
+                    (
+                        np.random.normal(DtX[j][0], Dt_noise, nchan)
+                        + 1.0j * np.random.normal(DtX[j][1], Dt_noise, nchan)
+                    )
+                    for j in range(len(DtX))
+                ]
+            )
+            dtermsY.append(
+                [
+                    (
+                        np.random.normal(DtY[j][0], Dt_noise, nchan)
+                        + 1.0j * np.random.normal(DtY[j][1], Dt_noise, nchan)
+                    )
+                    for j in range(len(DtX))
+                ]
+            )
         else:
             dtermsX.append([np.zeros(nchan, dtype=np.complex128) for j in stnx])
             dtermsY.append([np.zeros(nchan, dtype=np.complex128) for j in stnx])
 
         # Compute point models:
         if len(I) > 0:
-            Lam2 = np.power(299792458./spwFreqs[i], 2.)
-            LamLO2 = (299792458./LO)**2.
+            Lam2 = np.power(299792458.0 / spwFreqs[i], 2.0)
+            LamLO2 = (299792458.0 / LO) ** 2.0
 
             for j in range(len(I)):
-                p = (Q[j]**2. + U[j]**2.)**0.5 * \
-                    np.power(spwFreqs[i]/LO, spec_index[j])
-                phi0 = 2.*np.arctan2(U[j], Q[j])
-                ModI[i][:] += I[j]*np.power(spwFreqs[i]/LO, spec_index[j])
-                ModQ[i][:] += p*np.cos(2.*(RM[j]*(Lam2-LamLO2) + phi0))
-                ModU[i][:] += p*np.sin(2.*(RM[j]*(Lam2-LamLO2) + phi0))
+                p = (Q[j] ** 2.0 + U[j] ** 2.0) ** 0.5 * np.power(
+                    spwFreqs[i] / LO, spec_index[j]
+                )
+                phi0 = 2.0 * np.arctan2(U[j], Q[j])
+                ModI[i][:] += I[j] * np.power(spwFreqs[i] / LO, spec_index[j])
+                ModQ[i][:] += p * np.cos(2.0 * (RM[j] * (Lam2 - LamLO2) + phi0))
+                ModU[i][:] += p * np.sin(2.0 * (RM[j] * (Lam2 - LamLO2) + phi0))
                 ModV[i][:] += V[j]
         if ismodel:
             ModI[i] += interpI(spwFreqs[i])
@@ -277,113 +362,141 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     # Field name:
     if len(model_image) > 0:
-        source = '.'.join(os.path.basename(model_image[0]).split('.')[:-1])
+        source = ".".join(os.path.basename(model_image[0]).split(".")[:-1])
     else:
-        source = 'POLSIM'
+        source = "POLSIM"
 
-    sm.setfield(sourcename=source, sourcedirection=incenter, calcode="TARGET", distance='0m')
+    sm.setfield(
+        sourcename=source, sourcedirection=incenter, calcode="TARGET", distance="0m"
+    )
 
-    mereftime = me.epoch('TAI', refdate)
+    mereftime = me.epoch("TAI", refdate)
 
-    printMsg('Will shift the date of observation to match the Hour Angle range')
+    printMsg("Will shift the date of observation to match the Hour Angle range")
 
-    sm.settimes(integrationtime=visib_time, usehourangle=usehourangle, referencetime=mereftime)
+    sm.settimes(
+        integrationtime=visib_time, usehourangle=usehourangle, referencetime=mereftime
+    )
 
     # Set scans:
     starttimes = []
     stoptimes = []
     sources = []
 
-    scandur = onsource_time/nscan
-    T0s = [H0 + (observe_time-scandur)/nscan*i for i in range(nscan)]
+    scandur = onsource_time / nscan
+    T0s = [H0 + (observe_time - scandur) / nscan * i for i in range(nscan)]
     for i in range(nscan):
         sttime = T0s[i]
-        endtime = (sttime + scandur)
-        starttimes.append(str(3600.*sttime)+'s')
-        stoptimes.append(str(3600.*endtime)+'s')
+        endtime = sttime + scandur
+        starttimes.append(str(3600.0 * sttime) + "s")
+        stoptimes.append(str(3600.0 * endtime) + "s")
         sources.append(source)
 
     for n in range(nscan):
         for sp in spwnames:
-            print "n:", n
-            print "observemany:"
-            print "sources:", sources[n]
-            print "spwname:", sp
-            print "starttimes:", starttimes[n]
-            print "stoptimes:", stoptimes[n]
-            sm.observemany(sourcenames=[sources[n]], spwname=sp,
-                           starttimes=[starttimes[n]], stoptimes=[stoptimes[n]],
-                           project='polsimulate')
+            print("n:", n)
+            print("observemany:")
+            print("sources:", sources[n])
+            print("spwname:", sp)
+            print("starttimes:", starttimes[n])
+            print("stoptimes:", stoptimes[n])
+            sm.observemany(
+                sourcenames=[sources[n]],
+                spwname=sp,
+                starttimes=[starttimes[n]],
+                stoptimes=[stoptimes[n]],
+                project="polsimulate",
+            )
 
     sm.close()
 
     # Change feeds to XY:
-    if feed == 'linear':
-        printMsg('CHANGING FEEDS TO X-Y')
-        tb.open(vis+'/FEED', nomodify=False)
-        pols = tb.getcol('POLARIZATION_TYPE')
-        pols[0][:] = 'X'
-        pols[1][:] = 'Y'
-        tb.putcol('POLARIZATION_TYPE', pols)
+    if feed == "linear":
+        printMsg("CHANGING FEEDS TO X-Y")
+        tb.open(vis + "/FEED", nomodify=False)
+        pols = tb.getcol("POLARIZATION_TYPE")
+        pols[0][:] = "X"
+        pols[1][:] = "Y"
+        tb.putcol("POLARIZATION_TYPE", pols)
         tb.close()
 
     # Computing par angle:
     ms.open(vis)
     ms.selectinit(datadescid=0)
-    temp = ms.getdata(['axis_info', 'ha'], ifraxis=True)
-    HAs = temp['axis_info']['time_axis']['HA']/3600.*15.*np.pi/180.
-    Ts = temp['axis_info']['time_axis']['MJDseconds']
+    temp = ms.getdata(["axis_info", "ha"], ifraxis=True)
+    HAs = temp["axis_info"]["time_axis"]["HA"] / 3600.0 * 15.0 * np.pi / 180.0
+    Ts = temp["axis_info"]["time_axis"]["MJDseconds"]
     ms.close()
 
     dirst = incenter.split()
     csys = cs.newcoordsys(direction=True)
-    csys.setdirection(refcode=dirst[0], refval=' '.join(dirst[1:]))
-    Dec = csys.torecord()['direction0']['crval'][1]
+    csys.setdirection(refcode=dirst[0], refval=" ".join(dirst[1:]))
+    Dec = csys.torecord()["direction0"]["crval"][1]
 
-    tb.open(vis+'/ANTENNA')
-    av = np.average(tb.getcol('POSITION'), axis=1)
-    Lat = np.arctan2(av[2], (av[0]**2.+av[1]**2.)**0.5)
+    tb.open(vis + "/ANTENNA")
+    av = np.average(tb.getcol("POSITION"), axis=1)
+    Lat = np.arctan2(av[2], (av[0] ** 2.0 + av[1] ** 2.0) ** 0.5)
     tb.close()
 
-    top = np.sin(HAs)*np.cos(Lat)
-    bot = np.sin(Lat)*np.cos(Dec)-np.sin(Dec)*np.cos(HAs)*np.cos(Lat)
+    top = np.sin(HAs) * np.cos(Lat)
+    bot = np.sin(Lat) * np.cos(Dec) - np.sin(Dec) * np.cos(HAs) * np.cos(Lat)
     ParAng = np.arctan2(top, bot)
     PAtime = spint.interp1d(Ts, ParAng)
 
     # Create an auxiliary MS:
-    printMsg('Creating the auxiliary single-pol datasets')
-    if feed == 'linear':
-        polprods = ['XX', 'YY', 'XY', 'YX', 'I', 'Q', 'U', 'V']
-    elif feed == 'circular':
-        polprods = ['RR', 'LL', 'RL', 'LR', 'I', 'Q', 'U', 'V']
+    printMsg("Creating the auxiliary single-pol datasets")
+    if feed == "linear":
+        polprods = ["XX", "YY", "XY", "YX", "I", "Q", "U", "V"]
+    elif feed == "circular":
+        polprods = ["RR", "LL", "RL", "LR", "I", "Q", "U", "V"]
 
     dvis = [vis + ss for ss in polprods]
 
     for dv in dvis:
-        os.system('rm -rf '+dv)
+        os.system("rm -rf " + dv)
 
     sm.open(dvis[0])
-    sm.setconfig(telescopename=array, x=stnx, y=stny, z=stnz,
-                 dishdiameter=stnd.tolist(),
-                 mount=mount, antname=antnames, padname=padnames,
-                 coordsystem='global', referencelocation=ALMA)
-    spwnames = ['spw%i' % i for i in range(len(BBs))]
+    sm.setconfig(
+        telescopename=array,
+        x=stnx,
+        y=stny,
+        z=stnz,
+        dishdiameter=stnd.tolist(),
+        mount=mount,
+        antname=antnames,
+        padname=padnames,
+        coordsystem="global",
+        referencelocation=ALMA,
+    )
+    spwnames = ["spw%i" % i for i in range(len(BBs))]
     for i in range(len(BBs)):
-        sm.setspwindow(spwname=spwnames[i], freq='%.8fGHz' % ((LO+BBs[i]-spw_width/2.)/1.e9),
-                       deltafreq='%.9fGHz' % (spw_width/nchan/1.e9),
-                       freqresolution='%.9fGHz' % (spw_width/nchan/1.e9),
-                       nchannels=nchan, refcode="BARY",
-                       stokes=polprods[0])
+        sm.setspwindow(
+            spwname=spwnames[i],
+            freq="%.8fGHz" % ((LO + BBs[i] - spw_width / 2.0) / 1.0e9),
+            deltafreq="%.9fGHz" % (spw_width / nchan / 1.0e9),
+            freqresolution="%.9fGHz" % (spw_width / nchan / 1.0e9),
+            nchannels=nchan,
+            refcode="BARY",
+            stokes=polprods[0],
+        )
 
     #  sm.setfeed(mode='perfect R L',pol=[''])
-    sm.setfield(sourcename=source, sourcedirection=incenter, calcode="TARGET", distance='0m')
-    sm.settimes(integrationtime=visib_time, usehourangle=usehourangle, referencetime=mereftime)
+    sm.setfield(
+        sourcename=source, sourcedirection=incenter, calcode="TARGET", distance="0m"
+    )
+    sm.settimes(
+        integrationtime=visib_time, usehourangle=usehourangle, referencetime=mereftime
+    )
 
     for n in range(nscan):
         for sp in spwnames:
-            sm.observemany(sourcenames=[sources[n]], spwname=sp,
-                           starttimes=[starttimes[n]], stoptimes=[stoptimes[n]],
-                           project='polsimulate')
+            sm.observemany(
+                sourcenames=[sources[n]],
+                spwname=sp,
+                starttimes=[starttimes[n]],
+                stoptimes=[stoptimes[n]],
+                project="polsimulate",
+            )
 
     sm.close()
 
@@ -392,18 +505,18 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
     clearcal(vis=vis, addmodel=True)
 
     for dv in dvis[1:]:
-        os.system('cp -r %s %s' % (dvis[0], dv))
+        os.system("cp -r %s %s" % (dvis[0], dv))
 
     # Auxiliary arrays:
     ms.open(dvis[0])
     spwscans = []
     for n in range(len(spwnames)):
         ms.selectinit(datadescid=n)
-        spwscans.append(np.copy(ms.range('scan_number')['scan_number']))
+        spwscans.append(np.copy(ms.range("scan_number")["scan_number"]))
 
     ms.selectinit(datadescid=0)
-    ms.select({'scan_number': int(spwscans[0][0])})
-    dataI = np.copy(ms.getdata(['data'])['data'])
+    ms.select({"scan_number": int(spwscans[0][0])})
+    dataI = np.copy(ms.getdata(["data"])["data"])
     dataQ = np.copy(dataI)
     dataU = np.copy(dataI)
     dataV = np.copy(dataI)
@@ -411,52 +524,51 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     ntimes = np.shape(dataI)[-1]
 
-    printMsg('Simulating X-Y feed observations')
+    printMsg("Simulating X-Y feed observations")
     PAs = {}
     ant1 = {}
     ant2 = {}
 
-    print "dvis[4]:", dvis[4]
+    print("dvis[4]:", dvis[4])
     ms.open(dvis[4], nomodify=False)
 
-    import pdb; pdb.set_trace()
     for i in range(len(BBs)):
-        print i, spwscans[i]
+        print(i, spwscans[i])
         for n in spwscans[i]:
-            print "initialize selection %d" % (i)
+            print("initialize selection %d" % (i))
             ms.selectinit(datadescid=i)
-            print "select scan number %d" % (int(n))
-            ms.select({'scan_number': int(n)})
-            ants = ms.getdata(['antenna1', 'antenna2', 'time'])
-            print "ants", ants
-            ant1[n] = np.copy(ants['antenna1'])
-            print "ant1[n]", ant1[n]
-            ant2[n] = np.copy(ants['antenna2'])
-            print "ant2[n]", ant2[n]
-            MJD = ants['time']
-            print "MJD", MJD
+            print("select scan number %d" % (int(n)))
+            ms.select({"scan_number": int(n)})
+            ants = ms.getdata(["antenna1", "antenna2", "time"])
+            print("ants", ants)
+            ant1[n] = np.copy(ants["antenna1"])
+            print("ant1[n]", ant1[n])
+            ant2[n] = np.copy(ants["antenna2"])
+            print("ant2[n]", ant2[n])
+            MJD = ants["time"]
+            print("MJD", MJD)
             PAs[n] = PAtime(MJD)
-            print "PAs[n]", PAs[n]
+            print("PAs[n]", PAs[n])
 
     ms.close()
 
-    print "Simulating Stokes I"
+    print("Simulating Stokes I")
     if len(Iim) > 0:
         ft(vis=dvis[4], model=Iim, usescratch=True)
 
-    print "Simulating Stokes Q"
+    print("Simulating Stokes Q")
     if len(Qim) > 0:
         ft(vis=dvis[5], model=Qim, usescratch=True)
 
-    print "Simulating Stokes U"
+    print("Simulating Stokes U")
     if len(Uim) > 0:
         ft(vis=dvis[6], model=Uim, usescratch=True)
 
-    print "Simulating Stokes V"
+    print("Simulating Stokes V")
     if len(Uim) > 0:
         ft(vis=dvis[7], model=Uim, usescratch=True)
 
-    printMsg('Computing the correlations')
+    printMsg("Computing the correlations")
     XX = np.zeros(np.shape(dataI), dtype=np.complex128)
     YY = np.zeros(np.shape(dataI), dtype=np.complex128)
     XY = np.zeros(np.shape(dataI), dtype=np.complex128)
@@ -473,16 +585,16 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
         YXb = np.zeros(nchan, dtype=np.complex128)
 
     for i in range(len(BBs)):
-        printMsg('Doing spw %i' % i)
+        printMsg("Doing spw %i" % i)
         gc.collect()
         for sci, sc in enumerate(spwscans[i]):
-            print 'Scan %i of %i' % (sci+1, len(spwscans[i]))
+            print("Scan %i of %i" % (sci + 1, len(spwscans[i])))
             ms.open(dvis[4], nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
+            ms.select({"scan_number": int(sc)})
 
             if len(Iim) > 0:
-                dataI[:] = ms.getdata(['model_data'])['model_data']
+                dataI[:] = ms.getdata(["model_data"])["model_data"]
             else:
                 dataI[:] = 0.0
             if len(I) > 0 or ismodel:
@@ -492,10 +604,10 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
             ms.open(dvis[5], nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
+            ms.select({"scan_number": int(sc)})
 
             if len(Qim) > 0:
-                dataQ[:] = ms.getdata(['model_data'])['model_data']
+                dataQ[:] = ms.getdata(["model_data"])["model_data"]
             else:
                 dataQ[:] = 0.0
             if len(I) > 0 or ismodel:
@@ -505,10 +617,10 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
             ms.open(dvis[6], nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
+            ms.select({"scan_number": int(sc)})
 
             if len(Uim) > 0:
-                dataU[:] = ms.getdata(['model_data'])['model_data']
+                dataU[:] = ms.getdata(["model_data"])["model_data"]
             else:
                 dataU[:] = 0.0
             if len(I) > 0 or ismodel:
@@ -518,10 +630,10 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
             ms.open(dvis[7], nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
+            ms.select({"scan_number": int(sc)})
 
             if len(Uim) > 0:
-                dataV[:] = ms.getdata(['model_data'])['model_data']
+                dataV[:] = ms.getdata(["model_data"])["model_data"]
             else:
                 dataV[:] = 0.0
             if len(I) > 0 or ismodel:
@@ -531,50 +643,88 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
             for j in range(ntimes):
                 PA = PAs[sc][j]
-                C2 = np.cos(2.*PA)
-                S2 = np.sin(2.*PA)
+                C2 = np.cos(2.0 * PA)
+                S2 = np.sin(2.0 * PA)
                 C = np.cos(PA)
                 S = np.sin(PA)
-                EPA = np.exp(1.j*2.*PA)
-                EMA = np.exp(-1.j*2.*PA)
+                EPA = np.exp(1.0j * 2.0 * PA)
+                EMA = np.exp(-1.0j * 2.0 * PA)
 
                 if corrupt:
 
                     # To add a leakage, we have to go to the antenna frame first!
 
                     # Visibilities in the antenna frame:
-                    if feed == 'linear':
-                        XXa[:] = (dataI[0, :, j] + dataQ[0, :, j] * C2 - dataU[0, :, j]*S2)
-                        YYa[:] = (dataI[0, :, j] - dataQ[0, :, j] * C2 + dataU[0, :, j]*S2)
-                        XYa[:] = dataU[0, :, j]*C2 + dataQ[0, :, j]*S2 + 1.j*dataV[0, :, j]
-                        YXa[:] = dataU[0, :, j]*C2 + dataQ[0, :, j]*S2 - 1.j*dataV[0, :, j]
+                    if feed == "linear":
+                        XXa[:] = (
+                            dataI[0, :, j] + dataQ[0, :, j] * C2 - dataU[0, :, j] * S2
+                        )
+                        YYa[:] = (
+                            dataI[0, :, j] - dataQ[0, :, j] * C2 + dataU[0, :, j] * S2
+                        )
+                        XYa[:] = (
+                            dataU[0, :, j] * C2
+                            + dataQ[0, :, j] * S2
+                            + 1.0j * dataV[0, :, j]
+                        )
+                        YXa[:] = (
+                            dataU[0, :, j] * C2
+                            + dataQ[0, :, j] * S2
+                            - 1.0j * dataV[0, :, j]
+                        )
 
-                    if feed == 'circular':
-                        XXa[:] = (dataI[0, :, j] + dataV[0, :, j]) * EPA  # *C2 - dataU[0,:,j]*S2)
-                        YYa[:] = (dataI[0, :, j] - dataV[0, :, j]) * EMA  # + dataU[0,:,j]*S2)
-                        XYa[:] = dataQ[0, :, j] + 1.j*dataU[0, :, j]
-                        YXa[:] = dataQ[0, :, j] - 1.j*dataU[0, :, j]
+                    if feed == "circular":
+                        XXa[:] = (
+                            dataI[0, :, j] + dataV[0, :, j]
+                        ) * EPA  # *C2 - dataU[0,:,j]*S2)
+                        YYa[:] = (
+                            dataI[0, :, j] - dataV[0, :, j]
+                        ) * EMA  # + dataU[0,:,j]*S2)
+                        XYa[:] = dataQ[0, :, j] + 1.0j * dataU[0, :, j]
+                        YXa[:] = dataQ[0, :, j] - 1.0j * dataU[0, :, j]
 
                     # Add leakage:
-                    XXb[:] = XXa + YYa*dtermsX[i][ant1[sc][j]]*np.conjugate(
-                        dtermsX[i][ant2[sc][j]]) + XYa*np.conjugate(dtermsX[i][ant2[sc][j]]) + \
-                        YXa*dtermsX[i][ant1[sc][j]]
-                    YYb[:] = YYa + XXa*dtermsY[i][ant1[sc][j]]*np.conjugate(
-                        dtermsY[i][ant2[sc][j]]) + XYa*dtermsY[i][ant1[sc][j]] + \
-                        YXa*np.conjugate(dtermsY[i][ant2[sc][j]])
-                    XYb[:] = XYa + YYa*dtermsX[i][ant1[sc][j]] + XXa*np.conjugate(
-                        dtermsY[i][ant2[sc][j]]) + YXa*dtermsX[i][ant1[sc][j]]*np.conjugate(dtermsY[i][ant2[sc][j]])
-                    YXb[:] = YXa + XXa*dtermsY[i][ant1[sc][j]] + YYa*np.conjugate(
-                        dtermsX[i][ant2[sc][j]]) + XYa*dtermsY[i][ant1[sc][j]]*np.conjugate(dtermsX[i][ant2[sc][j]])
+                    XXb[:] = (
+                        XXa
+                        + YYa
+                        * dtermsX[i][ant1[sc][j]]
+                        * np.conjugate(dtermsX[i][ant2[sc][j]])
+                        + XYa * np.conjugate(dtermsX[i][ant2[sc][j]])
+                        + YXa * dtermsX[i][ant1[sc][j]]
+                    )
+                    YYb[:] = (
+                        YYa
+                        + XXa
+                        * dtermsY[i][ant1[sc][j]]
+                        * np.conjugate(dtermsY[i][ant2[sc][j]])
+                        + XYa * dtermsY[i][ant1[sc][j]]
+                        + YXa * np.conjugate(dtermsY[i][ant2[sc][j]])
+                    )
+                    XYb[:] = (
+                        XYa
+                        + YYa * dtermsX[i][ant1[sc][j]]
+                        + XXa * np.conjugate(dtermsY[i][ant2[sc][j]])
+                        + YXa
+                        * dtermsX[i][ant1[sc][j]]
+                        * np.conjugate(dtermsY[i][ant2[sc][j]])
+                    )
+                    YXb[:] = (
+                        YXa
+                        + XXa * dtermsY[i][ant1[sc][j]]
+                        + YYa * np.conjugate(dtermsX[i][ant2[sc][j]])
+                        + XYa
+                        * dtermsY[i][ant1[sc][j]]
+                        * np.conjugate(dtermsX[i][ant2[sc][j]])
+                    )
 
                     # Put back into sky frame:
-                    if feed == 'linear':
-                        XX[0, :, j] = (C*XXb + S*YXb)*C + (C*XYb+S*YYb)*S
-                        YY[0, :, j] = -(S*XYb - C*YYb)*C + (S*XXb-C*YXb)*S
-                        XY[0, :, j] = (C*XYb + S*YYb)*C - (C*XXb + S*YXb)*S
-                        YX[0, :, j] = -(S*XXb - C*YXb)*C - (S*XYb - C*YYb)*S
+                    if feed == "linear":
+                        XX[0, :, j] = (C * XXb + S * YXb) * C + (C * XYb + S * YYb) * S
+                        YY[0, :, j] = -(S * XYb - C * YYb) * C + (S * XXb - C * YXb) * S
+                        XY[0, :, j] = (C * XYb + S * YYb) * C - (C * XXb + S * YXb) * S
+                        YX[0, :, j] = -(S * XXb - C * YXb) * C - (S * XYb - C * YYb) * S
 
-                    if feed == 'circular':
+                    if feed == "circular":
                         XX[0, :, j] = XXa[:] * EMA
                         YY[0, :, j] = YYa[:] * EPA
                         XY[0, :, j] = XYa[:]
@@ -583,55 +733,55 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
                 else:
 
                     # No leakage. Compute directly in sky frame:
-                    if feed == 'linear':
-                        XX[0, :, j] = (dataI[0, :, j] + dataQ[0, :, j])
-                        YY[0, :, j] = (dataI[0, :, j] - dataQ[0, :, j])
-                        XY[0, :, j] = dataU[0, :, j] + 1.j*dataV[0, :, j]
-                        YX[0, :, j] = dataU[0, :, j] - 1.j*dataV[0, :, j]
+                    if feed == "linear":
+                        XX[0, :, j] = dataI[0, :, j] + dataQ[0, :, j]
+                        YY[0, :, j] = dataI[0, :, j] - dataQ[0, :, j]
+                        XY[0, :, j] = dataU[0, :, j] + 1.0j * dataV[0, :, j]
+                        YX[0, :, j] = dataU[0, :, j] - 1.0j * dataV[0, :, j]
 
-                    if feed == 'circular':
-                        XX[0, :, j] = (dataI[0, :, j] + dataV[0, :, j])
-                        YY[0, :, j] = (dataI[0, :, j] - dataV[0, :, j])
-                        XY[0, :, j] = dataQ[0, :, j] + 1.j*dataU[0, :, j]
-                        YX[0, :, j] = dataQ[0, :, j] - 1.j*dataU[0, :, j]
+                    if feed == "circular":
+                        XX[0, :, j] = dataI[0, :, j] + dataV[0, :, j]
+                        YY[0, :, j] = dataI[0, :, j] - dataV[0, :, j]
+                        XY[0, :, j] = dataQ[0, :, j] + 1.0j * dataU[0, :, j]
+                        YX[0, :, j] = dataQ[0, :, j] - 1.0j * dataU[0, :, j]
 
             # Save:
-            print polprods[0]
+            print(polprods[0])
             ms.open(str(dvis[0]), nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
-            aux = ms.getdata(['data'])
-            aux['data'][:] = XX
+            ms.select({"scan_number": int(sc)})
+            aux = ms.getdata(["data"])
+            aux["data"][:] = XX
             ms.putdata(aux)
             ms.close()
             del aux
 
-            print polprods[1]
+            print(polprods[1])
             ms.open(str(dvis[1]), nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
-            aux = ms.getdata(['data'])
-            aux['data'][:] = YY[:]
+            ms.select({"scan_number": int(sc)})
+            aux = ms.getdata(["data"])
+            aux["data"][:] = YY[:]
             ms.putdata(aux)
             ms.close()
             del aux
 
-            print polprods[2]
+            print(polprods[2])
             ms.open(str(dvis[2]), nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
-            aux = ms.getdata(['data'])
-            aux['data'][:] = XY
+            ms.select({"scan_number": int(sc)})
+            aux = ms.getdata(["data"])
+            aux["data"][:] = XY
             ms.putdata(aux)
             ms.close()
             del aux
 
-            print polprods[3]
+            print(polprods[3])
             ms.open(str(dvis[3]), nomodify=False)
             ms.selectinit(datadescid=i)
-            ms.select({'scan_number': int(sc)})
-            aux = ms.getdata(['data'])
-            aux['data'][:] = YX
+            ms.select({"scan_number": int(sc)})
+            aux = ms.getdata(["data"])
+            aux["data"][:] = YX
             ms.putdata(aux)
             ms.close()
             del aux
@@ -640,49 +790,57 @@ def polsimulate(vis='polsimulate_output.ms', array_configuration='alma.out04.cfg
 
     # The sm tool IS BROKEN for full-polarization datasets!
     if corrupt:
-        printMsg('Corrupting')
+        printMsg("Corrupting")
         for i in range(len(BBs)):
-            printMsg('Doing spw %i' % i)
+            printMsg("Doing spw %i" % i)
             for pri, pr in enumerate(dvis[:4]):
-                print 'Polprod %s' % polprods[pri]
+                print("Polprod %s" % polprods[pri])
                 sm.openfromms(pr)
-                sm.setseed(seed+4*i + 16*pri)
+                sm.setseed(seed + 4 * i + 16 * pri)
                 sm.setdata(fieldid=[sources[0]], spwid=i)
-                sm.setnoise(spillefficiency=eta_s, correfficiency=eta_q,
-                            antefficiency=eta_a, trx=t_rx,
-                            tau=tau0, tatmos=t_sky, tground=t_ground, tcmb=2.725,
-                            mode="tsys-manual", senscoeff=-1)
+                sm.setnoise(
+                    spillefficiency=eta_s,
+                    correfficiency=eta_q,
+                    antefficiency=eta_a,
+                    trx=t_rx,
+                    tau=tau0,
+                    tatmos=t_sky,
+                    tground=t_ground,
+                    tcmb=2.725,
+                    mode="tsys-manual",
+                    senscoeff=-1,
+                )
                 sm.corrupt()
                 sm.done()
 
     # Copy into full-pol ms:
-    printMsg('Saving')
+    printMsg("Saving")
 
     for i in range(len(BBs)):
-        printMsg('Doing spw %i' % i)
+        printMsg("Doing spw %i" % i)
         for pri, pr in enumerate(dvis[:4]):
-            print 'Polprod %s' % polprods[pri]
+            print("Polprod %s" % polprods[pri])
             for sc in spwscans[i]:
                 ms.open(str(pr), nomodify=False)
                 ms.selectinit(datadescid=i)
-                ms.select({'scan_number': int(sc)})
-                aux = ms.getdata(['data'])['data'][0, :]
+                ms.select({"scan_number": int(sc)})
+                aux = ms.getdata(["data"])["data"][0, :]
                 ms.close()
                 ms.open(vis, nomodify=False)
                 ms.selectinit(datadescid=i)
-                ms.select({'scan_number': int(sc)})
-                data = ms.getdata(['data'])
-                data['data'][pri, :] = aux
+                ms.select({"scan_number": int(sc)})
+                data = ms.getdata(["data"])
+                data["data"][pri, :] = aux
                 ms.putdata(data)
                 ms.close()
                 del data, aux
 
-    printMsg('Clearing data')
+    printMsg("Clearing data")
     del XX, YY, XY, YX, dataI, dataQ, dataU, dataV
     gc.collect()
     clearcal(vis)
 
     for dv in dvis:
-        os.system('rm -rf %s' % dv)
+        os.system("rm -rf %s" % dv)
 
-    print 'DONE!\n'
+    print("DONE!\n")
