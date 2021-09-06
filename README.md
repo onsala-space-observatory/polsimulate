@@ -32,7 +32,7 @@ PATH=<directory where your casa binary lives> buildmytasks
  2. Edit the file `$HOME/.casa/init.py`. Add the line:
 
 ``` shell
-execfile('$HOME/.casa/NordicTools/polsimulate/mytasks.py')
+execfile(os.environ['HOME']+'/.casa/NordicTools/polsimulate/mytasks.py')
 ```
 
 Alternatively, just run that command inside `casa` before trying to
@@ -42,8 +42,8 @@ run the `polsimulate` task.
 That's it! You should be able to run the new task in `casa`! Just doing:
 
 ``` shell
-tget polsimulate
+inp polsimulate
 ```
 
-inside `casa` should load the task. To get help, just type `help
-polsimulate` and to run it use `polsimulate()`.
+inside `casa` should load the task and show you its parameters. To get
+help, just type `help polsimulate` and to run it use `polsimulate()`.
