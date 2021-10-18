@@ -13,6 +13,6 @@ nchan = 16
 onsource_time = 0.5
 observe_time = 3.0
 visib_time = '6s'
-nscan = 1
+nscan = 10
 corrupt = False
 polsimulate()

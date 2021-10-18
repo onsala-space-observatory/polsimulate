@@ -50,8 +50,8 @@ import os
 import gc
 import numpy as np
 
-# from simutil import *
-import simutil
+from simutil import *
+# import simutil
 import scipy.interpolate as spint
 from taskinit import gentools
 from clearcal_cli import clearcal_cli as clearcal
@@ -61,57 +61,32 @@ ms = gentools(["ms"])[0]
 sm = gentools(["sm"])[0]
 me = gentools(["me"])[0]
 tb = gentools(["tb"])[0]
-cs = gentools(["cs"])[0]
 
 __version__ = "1.2"
 
+def polsimulate(vis="polsimulate_output.ms", array_configuration="alma.out04.cfg", feed="linear",
+                LO=100.0e9, BBs=[-7.0e9, -5.0e9, 5.0e9, 7.0e9], spw_width=2.0e9, nchan=128,
+                model_image=[], I=[], Q=[], U=[], V=[], RM=[], spec_index=[],
+                spectrum_file="",
+                incenter="J2000 00h00m00.00 -00d00m00.00", incell="", inbright="",
+                inwidth="", H0=-1.5,
+                onsource_time=1.5, observe_time=3.0, visib_time="6s", nscan=50,
+                corrupt=True, seed=42,
+                Dt_amp=0.00, Dt_noise=0.001, tau0=0.0, t_sky=250.0, t_ground=270.0, t_receiver=50.0):
 
-def polsimulate(
-    vis="polsimulate_output.ms",
-    array_configuration="alma.out04.cfg",
-    feed="linear",
-    LO=100.0e9,
-    BBs=[-7.0e9, -5.0e9, 5.0e9, 7.0e9],
-    spw_width=2.0e9,
-    nchan=128,
-    model_image=[],
-    I=[],
-    Q=[],
-    U=[],
-    V=[],
-    RM=[],
-    spec_index=[],
-    spectrum_file="",
-    incenter="J2000 00h00m00.00 -00d00m00.00",
-    incell="",
-    inbright="",
-    inwidth="",
-    H0=-1.5,
-    onsource_time=1.5,
-    observe_time=3.0,
-    visib_time="6s",
-    nscan=50,
-    corrupt=True,
-    seed=42,
-    Dt_amp=0.00,
-    Dt_noise=0.001,
-    tau0=0.0,
-    t_sky=250.0,
-    t_ground=270.0,
-    t_receiver=50.0,
-):
     def printError(msg):
         print(msg)
-        # casalog.post('PolSimulate: ' + msg)
+        casalog.post('PolSimulate: ' + msg)
         raise Exception(msg)
 
     def printMsg(msg):
         print(msg)
-        # casalog.post('PolSimuate: ' + msg)
+        casalog.post('PolSimuate: ' + msg)
 
     printMsg("POLSIMULATE - VERSION %s  - Nordic ARC Node" % __version__)
 
-    util = simutil.simutil("")
+    # util = simutil.simutil('')
+    util = simutil('')
     array = array_configuration[:4].upper()
 
     # ALMA bands:
@@ -218,10 +193,10 @@ def polsimulate(
     if len(model_image) == 0 and len(I) == 0 and not ismodel:
         printError("ERROR! No model specified!")
 
+    antlist = os.getenv("CASAPATH").split(' ')[0] + "/data/alma/simmos/" + array_configuration
+    stnx, stny, stnz, stnd, padnames, antnames, _ = util.readantenna(antlist)
+    nant = len(padnames)
     printMsg("Model specified ...")
-    antlist = (
-        os.getenv("CASAPATH").split(" ")[0] + "/data/alma/simmos/" + array_configuration
-    )
     stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(antlist)
     antnames = ["A%02d" % (int(x)) for x in padnames]
 
@@ -394,19 +369,15 @@ def polsimulate(
 
     for n in range(nscan):
         for sp in spwnames:
-            print("n:", n)
+            print("spw:", n)
             print("observemany:")
             print("sources:", sources[n])
             print("spwname:", sp)
             print("starttimes:", starttimes[n])
             print("stoptimes:", stoptimes[n])
-            sm.observemany(
-                sourcenames=[sources[n]],
-                spwname=sp,
-                starttimes=[starttimes[n]],
-                stoptimes=[stoptimes[n]],
-                project="polsimulate",
-            )
+            sm.observemany(sourcenames=[sources[n]], spwname=sp,
+                           starttimes=[starttimes[n]], stoptimes=[stoptimes[n]],
+                           project='polsimulate')
 
     sm.close()
 
@@ -536,7 +507,7 @@ def polsimulate(
         print(i, spwscans[i])
         for n in spwscans[i]:
             print("initialize selection %d" % (i))
-            ms.selectinit(datadescid=i)
+            ms.selectinit(datadescid=i, reset=True)
             print("select scan number %d" % (int(n)))
             ms.select({"scan_number": int(n)})
             ants = ms.getdata(["antenna1", "antenna2", "time"])
