@@ -49,18 +49,20 @@
 import os
 import gc
 import numpy as np
-
-from simutil import *
-# import simutil
 import scipy.interpolate as spint
-from taskinit import gentools
-from clearcal_cli import clearcal_cli as clearcal
-from ft_cli import ft_cli as ft
 
-ms = gentools(["ms"])[0]
-sm = gentools(["sm"])[0]
-me = gentools(["me"])[0]
-tb = gentools(["tb"])[0]
+# from clearcal_cli import clearcal_cli as clearcal
+# from ft_cli import ft_cli as ft
+# from casatasks.private import *
+import casatools
+from casatasks import clearcal, ft
+from casatasks.private import simutil
+
+ms = casatools.ms()
+tb = casatools.table()
+sm = casatools.simulator()
+me = casatools.measures()
+cs = casatools.coordsys()
 
 __version__ = "1.2"
 
@@ -76,17 +78,18 @@ def polsimulate(vis="polsimulate_output.ms", array_configuration="alma.out04.cfg
 
     def printError(msg):
         print(msg)
-        casalog.post('PolSimulate: ' + msg)
+        # casalog.post('PolSimulate: ' + msg)
         raise Exception(msg)
 
     def printMsg(msg):
         print(msg)
-        casalog.post('PolSimuate: ' + msg)
+        # casalog.post('PolSimuate: ' + msg)
 
     printMsg("POLSIMULATE - VERSION %s  - Nordic ARC Node" % __version__)
+    print("H0 =", H0)
 
-    # util = simutil.simutil('')
-    util = simutil('')
+    util = simutil.simutil('')
+    # util = simutil('')
     array = array_configuration[:4].upper()
 
     # ALMA bands:
@@ -194,10 +197,9 @@ def polsimulate(vis="polsimulate_output.ms", array_configuration="alma.out04.cfg
         printError("ERROR! No model specified!")
 
     antlist = os.getenv("CASAPATH").split(' ')[0] + "/data/alma/simmos/" + array_configuration
-    stnx, stny, stnz, stnd, padnames, antnames, _ = util.readantenna(antlist)
-    nant = len(padnames)
+    stnx, stny, stnz, stnd, padnames, antnames, telescopename, posobs = util.readantenna(antlist)
+    # nant = len(padnames)
     printMsg("Model specified ...")
-    stnx, stny, stnz, stnd, padnames, nant, antnames = util.readantenna(antlist)
     antnames = ["A%02d" % (int(x)) for x in padnames]
 
     # Setting noise
@@ -359,6 +361,10 @@ def polsimulate(vis="polsimulate_output.ms", array_configuration="alma.out04.cfg
     sources = []
 
     scandur = onsource_time / nscan
+    print("H0:", H0)
+    print("observe_time:", observe_time)
+    print("scandur:", scandur)
+    print("nscan:", nscan)
     T0s = [H0 + (observe_time - scandur) / nscan * i for i in range(nscan)]
     for i in range(nscan):
         sttime = T0s[i]
