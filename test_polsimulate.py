@@ -1,4 +1,14 @@
-model_image = ['SFits.im', 'QFits.im', 'UFits.im', 'Zero.im']
+import os
+import sys
+
+# mydir = os.getenv("HOME") + "/ARC"
+# sys.path.insert(0, mydir)
+# from polsimulate.gotasks.polsimulate import polsimulate
+
+model_image = [mydir + '/polsimulate/SFits.im',
+               mydir + '/polsimulate/QFits.im',
+               mydir + '/polsimulate/UFits.im',
+               mydir + '/polsimulate/Zero.im']
 I = [0.2]
 Q = [0.03]
 U = [0.01]
