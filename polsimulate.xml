@@ -25,7 +25,7 @@
         <value>linear</value>
       </param>
 
-      <param mustexist="false" name="LO" type="any">
+      <param mustexist="false" name="LO" type="double">
         <description>Frequency of the first LO in Hz (this will define the ALMA band of
         observation).  Default is 100 GHz (i.e., ALMA Band 3)</description>
         <value>100.e9</value>
@@ -37,7 +37,7 @@
         <value>[-7.e9, -5.e9, 5.e9, 7.e9]</value>
       </param>
 
-      <param mustexist="false" name="spw_width" type="any">
+      <param mustexist="false" name="spw_width" type="double">
         <description>Width of the spectral windows in Hz (the spws will be centered at
         each BB).</description>
         <value>2.e9</value>
@@ -138,18 +138,18 @@
         <value/>
       </param>
 
-      <param mustexist="false" name="H0" type="any">
+      <param mustexist="false" name="H0" type="double">
         <description>Hour angle at the start of the observations (in hr).</description>
         <value>-1.5</value>
       </param>
 
-      <param mustexist="false" name="onsource_time" type="any">
+      <param mustexist="false" name="onsource_time" type="double">
         <description>Integration time over the source (in hr).  Default is 1 hr for a
         total observing time of 3h (i.e., 33% time).</description>
         <value>1.0</value>
       </param>
 
-      <param mustexist="false" name="observe_time" type="any">
+      <param mustexist="false" name="observe_time" type="double">
         <description>Total observing time in hr.</description>
         <value>3.0</value>
       </param>
@@ -166,7 +166,7 @@
         <value>50</value>
       </param>
 
-      <param mustexist="false" name="corrupt" type="any">
+      <param mustexist="false" name="corrupt" type="bool">
         <description>Whether to add noise to the visibilities.</description>
         <value>True</value>
       </param>
@@ -176,14 +176,14 @@
         <value>42</value>
       </param>
 
-      <param mustexist="false" name="Dt_amp" type="any">
+      <param mustexist="false" name="Dt_amp" type="double">
         <description>Typical absolute value of the Dterms (real and imag). The actual
         values will be computed from a random Gaussian distribution of width Dt_amp.
         Default is to assume a perfect calibration of the Dterms.</description>
         <value>0.0</value>
       </param>
 
-      <param mustexist="false" name="Dt_noise" type="any">
+      <param mustexist="false" name="Dt_noise" type="double">
         <description>Typical residual channel noise in the Dterms (real and imag). The
         actual values for each frequency channel will be those of Dt_amp PLUS a random
         Gaussian distribution of width Dt_noise. Default is 0.001, similar to the spectral
@@ -192,22 +192,22 @@
         <value>0.001</value>
       </param>
 
-      <param mustexist="false" name="tau0" type="any">
+      <param mustexist="false" name="tau0" type="double">
         <description>Atmospheric opacity at zenith.</description>
         <value>0.0</value>
       </param>
 
-      <param mustexist="false" name="t_sky" type="any">
+      <param mustexist="false" name="t_sky" type="double">
         <description>Sky temperature (in K).</description>
         <value>250.0</value>
       </param>
 
-      <param mustexist="false" name="t_ground" type="any">
+      <param mustexist="false" name="t_ground" type="double">
         <description>Ground temperature (in K).</description>
         <value>270.0</value>
       </param>
 
-      <param mustexist="false" name="t_receiver" type="any">
+      <param mustexist="false" name="t_receiver" type="double">
         <description>Receiver temperature (in K).</description>
         <value>50.0</value>
       </param>
